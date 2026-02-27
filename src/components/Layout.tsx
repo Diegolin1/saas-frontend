@@ -96,7 +96,7 @@ export default function Layout() {
                                 leaveTo="-translate-x-full"
                             >
                                 <Dialog.Panel className="relative mr-16 flex w-full max-w-xs flex-1">
-                                    <div className="flex grow flex-col gap-y-8 overflow-y-auto bg-brand-950 px-6 pb-4 ring-1 ring-white/10 relative">
+                                    <div className="flex grow flex-col gap-y-8 overflow-y-auto glass-dark px-6 pb-4 ring-1 ring-white/10 relative">
                                         {/* Decorative Background Blob */}
                                         <div className="absolute top-0 left-0 w-full h-64 bg-brand-500/10 rounded-full blur-3xl -translate-y-1/2 -z-10 pointer-events-none"></div>
 
@@ -145,7 +145,7 @@ export default function Layout() {
                 </Transition.Root>
 
                 <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
-                    <div className="flex grow flex-col gap-y-8 overflow-y-auto bg-brand-950 px-6 pb-4 border-r border-white/5 relative">
+                    <div className="flex grow flex-col gap-y-8 overflow-y-auto glass-dark px-6 pb-4 border-r border-white/5 relative">
                         {/* Decorative Background Blob */}
                         <div className="absolute top-0 left-0 w-full h-64 bg-brand-500/10 rounded-full blur-3xl -translate-y-1/2 -z-10 pointer-events-none"></div>
 
@@ -189,7 +189,7 @@ export default function Layout() {
                 </div>
 
                 <div className="lg:pl-72">
-                    <div className="sticky top-0 z-40 flex h-20 shrink-0 items-center gap-x-4 border-b border-brand-100 bg-white/60 backdrop-blur-xl px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 transition-all duration-300">
+                    <div className="sticky top-0 z-40 flex h-20 shrink-0 items-center gap-x-4 border-b border-brand-100 glass px-4 shadow-glass sm:gap-x-6 sm:px-6 lg:px-8 transition-all duration-300">
                         <button
                             type="button"
                             className="-m-2.5 p-2.5 text-brand-700 lg:hidden"
@@ -236,11 +236,22 @@ export default function Layout() {
                         </div>
                     </div>
 
-                    <main className="py-10 bg-slate-50 min-h-[calc(100vh-4rem)]">
+                    <main className="py-10 bg-brand-50 min-h-[calc(100vh-4rem)]">
                         <div className="px-4 sm:px-6 lg:px-8">
                             <Outlet />
                         </div>
                     </main>
+                {/* Botón flotante de acción rápida */}
+                <button
+                    className="fixed z-40 bottom-8 right-8 flex items-center gap-2 bg-gold-500 text-brand-950 font-bold px-6 py-3 rounded-full shadow-glow hover:bg-gold-400 transition-all duration-300 animate-pulse hover:scale-105 focus:outline-none focus:ring-4 focus:ring-gold-400"
+                    style={{ boxShadow: '0 0 32px 0 rgba(212,175,55,0.25)' }}
+                    onClick={() => window.location.href = '/admin/products/new'}
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Nuevo Producto / Venta Rápida
+                </button>
                 </div>
             </div>
         </>

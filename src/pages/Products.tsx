@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getProducts, deleteProduct, Product } from '../services/product.service';
-import { PlusIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, PencilSquareIcon, TrashIcon, StarIcon, ExclamationTriangleIcon, ShareIcon } from '@heroicons/react/24/outline';
 
 export default function Products() {
     const [products, setProducts] = useState<Product[]>([]);
@@ -33,21 +33,19 @@ export default function Products() {
         }
     };
 
-    if (loading) return <div className="p-8 text-center text-gray-500">Cargando inventario...</div>;
+    if (loading) return <div className="p-8 text-center text-brand-400">Cargando inventario...</div>;
 
     return (
         <div className="px-4 sm:px-6 lg:px-8">
             <div className="sm:flex sm:items-center">
                 <div className="sm:flex-auto">
-                    <h1 className="text-xl font-semibold leading-6 text-gray-900">Productos</h1>
-                    <p className="mt-2 text-sm text-gray-700">
-                        Gestiona tu catálogo, inventario y precios.
-                    </p>
+                    <h1 className="text-2xl font-display font-bold text-brand-900">Catálogo de Productos</h1>
+                    <p className="mt-2 text-brand-500">Exhibe tus modelos como una galería premium.</p>
                 </div>
                 <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
                     <Link
                         to="/products/new"
-                        className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                        className="block rounded-full bg-gold-500 px-5 py-3 text-center text-base font-bold text-brand-950 shadow-glow hover:bg-gold-400 transition-all hover:scale-105"
                     >
                         <PlusIcon className="h-5 w-5 inline-block -mt-1 mr-1" />
                         Nuevo Producto
@@ -55,63 +53,67 @@ export default function Products() {
                 </div>
             </div>
 
-            <div className="mt-8 flow-root">
-                <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-                    <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-                        <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
-                            <table className="min-w-full divide-y divide-gray-300">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
-                                            Producto
-                                        </th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                                            SKU
-                                        </th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                                            Categoría
-                                        </th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                                            Stock Total
-                                        </th>
-                                        <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
-                                            <span className="sr-only">Acciones</span>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-200 bg-white">
-                                    {products.map((product) => (
-                                        <tr key={product.id}>
-                                            <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6 flex items-center gap-3">
-                                                {product.images && product.images.length > 0 ? (
-                                                    <img src={product.images[0].url} alt="" className="h-10 w-10 rounded-full object-cover bg-gray-100" />
-                                                ) : (
-                                                    <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-500">
-                                                        No img
-                                                    </div>
-                                                )}
-                                                {product.name}
-                                            </td>
-                                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{product.sku}</td>
-                                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{product.category}</td>
-                                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                                {product.variants?.reduce((acc, v) => acc + v.stock, 0) || 0}
-                                            </td>
-                                            <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                                                <Link to={`/products/${product.id}/edit`} className="text-indigo-600 hover:text-indigo-900 mr-4">
-                                                    <PencilSquareIcon className="h-5 w-5 inline" />
-                                                </Link>
-                                                <button onClick={() => handleDelete(product.id)} className="text-red-600 hover:text-red-900">
-                                                    <TrashIcon className="h-5 w-5 inline" />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+            <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                {products.length === 0 ? (
+                    <div className="col-span-full text-center text-brand-400 text-lg font-semibold py-16 glass-dark rounded-2xl shadow-glass-dark">
+                        No hay productos aún. ¡Sube tu primer modelo estrella!
                     </div>
-                </div>
+                ) : (
+                    products.map((product) => {
+                        const stock = product.variants?.reduce((acc, v) => acc + v.stock, 0) || 0;
+                        const isBestSeller = product.tags?.includes('best-seller');
+                        const isOutOfStock = stock === 0;
+                        return (
+                            <div key={product.id} className="relative glass p-5 rounded-2xl shadow-glow border border-gold-500/10 flex flex-col items-center group transition-all hover:shadow-glass-dark">
+                                {/* Imagen del producto */}
+                                {product.images && product.images.length > 0 ? (
+                                    <img src={product.images[0].url} alt={product.name} className="h-40 w-40 object-cover rounded-xl mb-4 shadow-glass-dark border-2 border-brand-100 group-hover:scale-105 transition-transform" />
+                                ) : (
+                                    <div className="h-40 w-40 flex items-center justify-center rounded-xl bg-brand-100 text-brand-400 mb-4 font-bold text-2xl">No img</div>
+                                )}
+
+                                {/* Insignias */}
+                                <div className="absolute top-4 left-4 flex flex-col gap-2">
+                                    {isBestSeller && (
+                                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-gold-400 to-gold-500 text-brand-950 font-bold text-xs shadow-glow animate-pulse">
+                                            <StarIcon className="h-4 w-4 mr-1" /> Más Vendido
+                                        </span>
+                                    )}
+                                    {isOutOfStock && (
+                                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-brand-400 to-brand-700 text-white font-bold text-xs shadow-glow animate-pulse">
+                                            <ExclamationTriangleIcon className="h-4 w-4 mr-1" /> Sin Stock
+                                        </span>
+                                    )}
+                                </div>
+
+                                {/* Info principal */}
+                                <h2 className="font-display text-lg font-bold text-brand-900 text-center mb-1">{product.name}</h2>
+                                <div className="text-brand-500 text-sm mb-2">SKU: {product.sku}</div>
+                                <div className="text-brand-400 text-xs mb-4">{product.category}</div>
+                                <div className="flex items-center gap-2 mb-4">
+                                    <span className="text-brand-900 font-bold text-base">Stock:</span>
+                                    <span className={isOutOfStock ? 'text-red-500 font-bold' : 'text-gold-500 font-bold'}>{stock}</span>
+                                </div>
+
+                                {/* Acciones */}
+                                <div className="flex gap-3 mt-auto">
+                                    <button
+                                        className="flex items-center gap-1 px-4 py-2 rounded-full bg-brand-900 text-gold-400 font-bold shadow-glow hover:bg-brand-800 hover:text-gold-500 transition-all text-sm"
+                                        onClick={() => navigator.share ? navigator.share({ title: product.name, url: window.location.origin + '/shop/' + product.id }) : navigator.clipboard.writeText(window.location.origin + '/shop/' + product.id)}
+                                    >
+                                        <ShareIcon className="h-4 w-4" /> Compartir
+                                    </button>
+                                    <Link to={`/products/${product.id}/edit`} className="flex items-center gap-1 px-4 py-2 rounded-full bg-gold-500 text-brand-950 font-bold shadow-glow hover:bg-gold-400 transition-all text-sm">
+                                        <PencilSquareIcon className="h-4 w-4" /> Editar
+                                    </Link>
+                                    <button onClick={() => handleDelete(product.id)} className="flex items-center gap-1 px-4 py-2 rounded-full bg-red-100 text-red-600 font-bold shadow hover:bg-red-200 transition-all text-sm">
+                                        <TrashIcon className="h-4 w-4" /> Eliminar
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })
+                )}
             </div>
         </div>
     );
