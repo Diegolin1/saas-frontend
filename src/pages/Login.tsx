@@ -30,7 +30,8 @@ const Login = () => {
             }
 
             login(data.token, data.user);
-            navigate('/');
+            // Redirect to admin dashboard
+            navigate('/admin');
         } catch (err: any) {
             setError(err.message);
         }
