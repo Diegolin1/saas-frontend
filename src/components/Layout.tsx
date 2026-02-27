@@ -8,7 +8,6 @@ import {
     TagIcon,
     ShoppingBagIcon,
     ClipboardDocumentListIcon,
-    XMarkIcon,
     ShoppingCartIcon,
     ChatBubbleLeftRightIcon,
     Cog6ToothIcon,
