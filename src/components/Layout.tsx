@@ -98,26 +98,39 @@ export default function Layout() {
                                 leaveTo="-translate-x-full"
                             >
                                 <Dialog.Panel className="relative mr-16 flex w-full max-w-xs flex-1">
-                                    <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-slate-900 px-6 pb-4 ring-1 ring-white/10">
-                                        <div className="flex h-16 shrink-0 items-center">
-                                            <h1 className="text-white text-xl font-bold tracking-tight">SaaS <span className="text-indigo-500">B2B</span></h1>
+                                    <div className="flex grow flex-col gap-y-8 overflow-y-auto bg-brand-950 px-6 pb-4 ring-1 ring-white/10 relative">
+                                        {/* Decorative Background Blob */}
+                                        <div className="absolute top-0 left-0 w-full h-64 bg-brand-500/10 rounded-full blur-3xl -translate-y-1/2 -z-10 pointer-events-none"></div>
+
+                                        <div className="flex h-20 shrink-0 items-center border-b border-white/10">
+                                            <h1 className="text-white font-display text-2xl font-bold tracking-tight">
+                                                León<span className="text-gold-400">B2B</span>
+                                            </h1>
                                         </div>
                                         <nav className="flex flex-1 flex-col">
                                             <ul role="list" className="flex flex-1 flex-col gap-y-7">
                                                 <li>
-                                                    <ul role="list" className="-mx-2 space-y-1">
+                                                    <div className="text-xs font-semibold leading-6 text-brand-400 mb-2 uppercase tracking-wider">Menú Principal</div>
+                                                    <ul role="list" className="-mx-2 space-y-2">
                                                         {navigation.map((item) => (
                                                             <li key={item.name}>
                                                                 <Link
                                                                     to={item.href}
+                                                                    onClick={() => setSidebarOpen(false)}
                                                                     className={classNames(
                                                                         location.pathname === item.href
-                                                                            ? 'bg-slate-800 text-white border-l-4 border-indigo-500'
-                                                                            : 'text-slate-400 hover:text-white hover:bg-slate-800',
-                                                                        'group flex gap-x-3 rounded-r-md p-2 text-sm leading-6 font-semibold transition-all duration-200'
+                                                                            ? 'bg-white/10 text-gold-400 border-l-2 border-gold-400 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]'
+                                                                            : 'text-brand-200 hover:text-white hover:bg-white/5',
+                                                                        'group flex gap-x-3 p-3 text-sm leading-6 font-medium transition-all duration-300 rounded-r-xl'
                                                                     )}
                                                                 >
-                                                                    <item.icon className="h-6 w-6 shrink-0" aria-hidden="true" />
+                                                                    <item.icon
+                                                                        className={classNames(
+                                                                            location.pathname === item.href ? 'text-gold-400' : 'text-brand-400 group-hover:text-gold-400',
+                                                                            'h-6 w-6 shrink-0 transition-colors duration-300'
+                                                                        )}
+                                                                        aria-hidden="true"
+                                                                    />
                                                                     {item.name}
                                                                 </Link>
                                                             </li>
@@ -134,26 +147,38 @@ export default function Layout() {
                 </Transition.Root>
 
                 <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
-                    <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-slate-900 px-6 pb-4 border-r border-slate-800">
-                        <div className="flex h-16 shrink-0 items-center">
-                            <h1 className="text-white text-xl font-bold tracking-tight">SaaS <span className="text-indigo-500">B2B</span></h1>
+                    <div className="flex grow flex-col gap-y-8 overflow-y-auto bg-brand-950 px-6 pb-4 border-r border-white/5 relative">
+                        {/* Decorative Background Blob */}
+                        <div className="absolute top-0 left-0 w-full h-64 bg-brand-500/10 rounded-full blur-3xl -translate-y-1/2 -z-10 pointer-events-none"></div>
+
+                        <div className="flex h-20 shrink-0 items-center border-b border-white/10">
+                            <h1 className="text-white font-display text-2xl font-bold tracking-tight">
+                                León<span className="text-gold-400">B2B</span>
+                            </h1>
                         </div>
                         <nav className="flex flex-1 flex-col">
                             <ul role="list" className="flex flex-1 flex-col gap-y-7">
                                 <li>
-                                    <ul role="list" className="-mx-2 space-y-1">
+                                    <div className="text-xs font-semibold leading-6 text-brand-400 mb-2 uppercase tracking-wider">Menú Principal</div>
+                                    <ul role="list" className="-mx-2 space-y-2">
                                         {navigation.map((item) => (
                                             <li key={item.name}>
                                                 <Link
                                                     to={item.href}
                                                     className={classNames(
                                                         location.pathname === item.href
-                                                            ? 'bg-slate-800 text-white border-l-4 border-indigo-500'
-                                                            : 'text-slate-400 hover:text-white hover:bg-slate-800',
-                                                        'group flex gap-x-3 rounded-r-md p-2 text-sm leading-6 font-semibold transition-all duration-200'
+                                                            ? 'bg-white/10 text-gold-400 border-l-2 border-gold-400 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]'
+                                                            : 'text-brand-200 hover:text-white hover:bg-white/5',
+                                                        'group flex gap-x-3 p-3 text-sm leading-6 font-medium transition-all duration-300 rounded-r-xl'
                                                     )}
                                                 >
-                                                    <item.icon className="h-6 w-6 shrink-0" aria-hidden="true" />
+                                                    <item.icon
+                                                        className={classNames(
+                                                            location.pathname === item.href ? 'text-gold-400' : 'text-brand-400 group-hover:text-gold-400',
+                                                            'h-6 w-6 shrink-0 transition-colors duration-300'
+                                                        )}
+                                                        aria-hidden="true"
+                                                    />
                                                     {item.name}
                                                 </Link>
                                             </li>
@@ -166,45 +191,45 @@ export default function Layout() {
                 </div>
 
                 <div className="lg:pl-72">
-                    <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
+                    <div className="sticky top-0 z-40 flex h-20 shrink-0 items-center gap-x-4 border-b border-brand-100 bg-white/60 backdrop-blur-xl px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 transition-all duration-300">
                         <button
                             type="button"
-                            className="-m-2.5 p-2.5 text-gray-700 lg:hidden"
+                            className="-m-2.5 p-2.5 text-brand-700 lg:hidden"
                             onClick={() => setSidebarOpen(true)}
                         >
                             <span className="sr-only">Open sidebar</span>
                             <Bars3Icon className="h-6 w-6" aria-hidden="true" />
                         </button>
 
-                        <div className="h-6 w-px bg-gray-900/10 lg:hidden" aria-hidden="true" />
+                        <div className="h-6 w-px bg-brand-200 lg:hidden" aria-hidden="true" />
 
                         <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
                             <div className="flex flex-1" />
                             <div className="flex items-center gap-x-4 lg:gap-x-6">
                                 {/* Cart Icon */}
-                                <Link to="/cart" className="group -m-2.5 p-2.5 flex items-center relative">
+                                <Link to="/cart" className="group -m-2.5 p-2.5 flex items-center relative hover:bg-brand-50 rounded-full transition-colors">
                                     <ShoppingCartIcon
-                                        className="h-6 w-6 flex-shrink-0 text-gray-400 group-hover:text-indigo-600 transition-colors"
+                                        className="h-6 w-6 flex-shrink-0 text-brand-500 group-hover:text-brand-600 transition-colors"
                                         aria-hidden="true"
                                     />
                                     {itemCount > 0 && (
-                                        <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white shadow-sm ring-2 ring-white">
+                                        <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-gold-500 text-[10px] font-bold text-brand-950 shadow-sm ring-2 ring-white">
                                             {itemCount}
                                         </span>
                                     )}
                                     <span className="sr-only">items in cart, view bag</span>
                                 </Link>
 
-                                <div className="h-6 w-px bg-gray-200" aria-hidden="true" />
+                                <div className="h-6 w-px bg-brand-200" aria-hidden="true" />
 
                                 <div className="flex items-center gap-x-4">
                                     <span className="hidden lg:flex lg:flex-col lg:items-end">
-                                        <span className="text-sm font-semibold leading-6 text-gray-900">{user?.email}</span>
-                                        <span className="text-xs text-gray-500 uppercase tracking-widest">{user?.role}</span>
+                                        <span className="text-sm font-semibold leading-6 text-brand-900">{user?.email || 'Premium User'}</span>
+                                        <span className="text-xs text-brand-500 uppercase tracking-widest font-medium bg-brand-50 px-2 py-0.5 rounded-full mt-0.5">{user?.role || 'OWNER'}</span>
                                     </span>
                                     <button
                                         onClick={logout}
-                                        className="text-sm font-medium text-red-600 hover:text-red-800 transition-colors bg-red-50 px-3 py-1 rounded-full hover:bg-red-100"
+                                        className="text-sm font-medium text-red-600 hover:text-red-700 transition-colors bg-red-50/50 px-4 py-2 rounded-full hover:bg-red-50"
                                     >
                                         Salir
                                     </button>
