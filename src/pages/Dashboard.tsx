@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { CurrencyDollarIcon, ShoppingCartIcon, UsersIcon, CursorArrowRaysIcon, SparklesIcon, QRcodeIcon, ArrowTopRightOnSquareIcon, RocketLaunchIcon } from '@heroicons/react/24/outline'
+import { CurrencyDollarIcon, ShoppingCartIcon, UsersIcon, CursorArrowRaysIcon, SparklesIcon, QrCodeIcon, ArrowTopRightOnSquareIcon, RocketLaunchIcon } from '@heroicons/react/24/outline'
 import { getDashboardStats } from '../services/dashboard.service'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -72,17 +72,17 @@ export default function Dashboard() {
             {/* Header Area */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl font-display font-bold text-slate-900">Hola, {user?.fullName || 'Dueño'} 👋</h2>
+                    <h2 className="text-2xl font-display font-bold text-slate-900">Hola, {user?.email?.split('@')[0] || 'Dueño'} 👋</h2>
                     <p className="text-slate-500 mt-1">Este es el resumen de tu maquinaria de ventas.</p>
                 </div>
 
                 {/* Global Quick Action */}
                 <div className="flex items-center gap-3">
                     <button onClick={() => navigator.clipboard.writeText(window.location.origin)} className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl text-sm font-semibold text-slate-700 shadow-sm border border-slate-200 hover:bg-slate-50 transition-colors">
-                        <QRcodeIcon className="w-5 h-5 text-slate-400" />
+                        <QrCodeIcon className="w-5 h-5 text-slate-400" />
                         Copiar Mi Enlace
                     </button>
-                    <Link to="/products" className="flex items-center gap-2 bg-brand-900 text-white px-5 py-2 rounded-xl text-sm font-semibold shadow-md hover:bg-brand-800 transition-colors">
+                    <Link to="/admin/products" className="flex items-center gap-2 bg-brand-900 text-white px-5 py-2 rounded-xl text-sm font-semibold shadow-md hover:bg-brand-800 transition-colors">
                         <SparklesIcon className="w-5 h-5 text-gold-400" />
                         Nuevo Producto
                     </Link>
@@ -107,7 +107,7 @@ export default function Dashboard() {
                         </p>
 
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                            <Link to="/products" className="w-full sm:w-auto px-8 py-4 bg-gold-500 hover:bg-gold-400 text-brand-950 font-bold rounded-xl transition-all shadow-glow hover:scale-105 flex items-center justify-center gap-2">
+                            <Link to="/admin/products" className="w-full sm:w-auto px-8 py-4 bg-gold-500 hover:bg-gold-400 text-brand-950 font-bold rounded-xl transition-all shadow-glow hover:scale-105 flex items-center justify-center gap-2">
                                 Subir Primer Modelo
                                 <ArrowTopRightOnSquareIcon className="w-5 h-5" />
                             </Link>
@@ -149,7 +149,7 @@ export default function Dashboard() {
                                     </div>
                                     <h3 className="text-lg font-bold text-slate-900 font-display">Últimos Leads (WhatsApp)</h3>
                                 </div>
-                                <Link to="/customers" className="text-sm font-semibold text-brand-600 hover:text-brand-500">Ver CRM &rarr;</Link>
+                                <Link to="/admin/customers" className="text-sm font-semibold text-brand-600 hover:text-brand-500">Ver CRM &rarr;</Link>
                             </div>
                             <div className="flex flex-col items-center justify-center py-12 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
                                 <UsersIcon className="h-10 w-10 text-slate-300 mb-3" />

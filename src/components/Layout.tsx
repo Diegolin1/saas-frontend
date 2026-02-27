@@ -32,31 +32,29 @@ export default function Layout() {
         const role = user?.role;
 
         const common = [
-            { name: 'Dashboard', href: '/', icon: HomeIcon },
+            { name: 'Dashboard', href: '/admin', icon: HomeIcon },
         ];
 
         const buyerNav = [
-            { name: 'Catálogo', href: '/shop', icon: ShoppingBagIcon },
-            { name: 'Mis Pedidos', href: '/orders', icon: ClipboardDocumentListIcon },
+            { name: 'Ir al Showroom', href: '/', icon: ShoppingBagIcon },
+            { name: 'Mis Pedidos', href: '/admin/my-orders', icon: ClipboardDocumentListIcon },
         ];
 
         const sellerNav = [
-            { name: 'Catálogo (Venta)', href: '/shop', icon: ShoppingBagIcon },
-            { name: 'Mis Pedidos (Todos)', href: '/orders', icon: ClipboardDocumentListIcon },
-            { name: 'Conversaciones', href: '/conversations', icon: ChatBubbleLeftRightIcon },
+            { name: 'Ir al Showroom', href: '/', icon: ShoppingBagIcon },
+            { name: 'Todos los Pedidos', href: '/admin/orders', icon: ClipboardDocumentListIcon },
         ];
 
         const adminNav = [ // Owner & Supervisor
             ...sellerNav,
-            { name: 'Admin Productos', href: '/products', icon: TagIcon },
-            { name: 'Clientes', href: '/customers', icon: UsersIcon },
-            { name: 'Listas Precio', href: '/price-lists', icon: CurrencyDollarIcon },
+            { name: 'Admin Productos', href: '/admin/products', icon: TagIcon },
+            { name: 'Clientes / Leads', href: '/admin/customers', icon: UsersIcon },
+            { name: 'Listas Precio', href: '/admin/price-lists', icon: CurrencyDollarIcon },
         ];
 
         const ownerNav = [ // Only for Owner/Admin
             ...adminNav,
-            { name: 'Configuración', href: '/settings', icon: Cog6ToothIcon },
-            { name: 'Facturación', href: '/billing', icon: CreditCardIcon },
+            { name: 'Configuración', href: '/admin/settings', icon: Cog6ToothIcon },
         ];
 
         if (role === 'BUYER') return [...common, ...buyerNav];
