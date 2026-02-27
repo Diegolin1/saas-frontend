@@ -8,7 +8,7 @@ export default function Cart() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [lead, setLead] = useState({ name: '', phone: '' });
 
-    const API_URL = import.meta.env.PROD ? '/api' : (import.meta.env.VITE_API_URL || 'http://localhost:3000/api');
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
     const handleWhatsAppCheckout = async (e: React.FormEvent) => {
         e.preventDefault();
