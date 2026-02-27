@@ -3,6 +3,7 @@ import { CurrencyDollarIcon, ShoppingCartIcon, UsersIcon, CursorArrowRaysIcon, S
 import { getDashboardStats } from '../services/dashboard.service'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { Tooltip } from '../components/Tooltip'
 
 export default function Dashboard() {
     const [stats, setStats] = useState<any>(null)
@@ -76,25 +77,30 @@ export default function Dashboard() {
                     <p className="text-brand-500 mt-1">Este es el resumen de tu maquinaria de ventas.</p>
                 </div>
 
-                {/* Global Quick Action Mejorado */}
+                {/* Global Quick Action Mejorado con Tooltips */}
                 <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => navigator.clipboard.writeText(window.location.origin)}
-                        className="flex items-center gap-2 glass px-5 py-2 rounded-xl text-sm font-semibold text-brand-900 shadow-glass border border-brand-100 hover:bg-white/80 transition-all hover:scale-105"
-                    >
-                        <QrCodeIcon className="w-5 h-5 text-gold-500" />
-                        Copiar Mi Enlace
-                    </button>
-                    <Link
-                        to="/admin/products"
-                        className="flex items-center gap-2 bg-gold-500 text-brand-950 px-6 py-2 rounded-xl text-sm font-bold shadow-glow hover:bg-gold-400 transition-all hover:scale-105 animate-pulse"
-                    >
-                        <SparklesIcon className="w-5 h-5 text-brand-900" />
-                        Nuevo Producto
-                    </Link>
+                    <Tooltip content="Comparte este enlace con tus clientes mayoristas para que accedan a tu catálogo digital.">
+                        <button
+                            onClick={() => navigator.clipboard.writeText(window.location.origin)}
+                            className="flex items-center gap-2 glass px-5 py-2 rounded-xl text-sm font-semibold text-brand-900 shadow-glass border border-brand-100 hover:bg-white/80 transition-all hover:scale-105 focus:outline-none"
+                        >
+                            <QrCodeIcon className="w-5 h-5 text-gold-500" />
+                            Copiar Mi Enlace
+                        </button>
+                    </Tooltip>
+                    <Tooltip content="Agrega tu primer producto estrella para activar tu showroom.">
+                        <Link
+                            to="/admin/products"
+                            className="flex items-center gap-2 bg-gold-500 text-brand-950 px-6 py-2 rounded-xl text-sm font-bold shadow-glow hover:bg-gold-400 transition-all hover:scale-105 animate-pulse focus:outline-none"
+                        >
+                            <SparklesIcon className="w-5 h-5 text-brand-900" />
+                            Nuevo Producto
+                        </Link>
+                    </Tooltip>
                 </div>
             </div>
 
+            {/* Onboarding visual para cuentas nuevas */}
             {isNewAccount ? (
                 /* SMART EMPTY STATE PREMIUM */
                 <div className="relative overflow-hidden rounded-3xl glass-dark px-8 py-16 shadow-glass-dark sm:px-16 sm:py-24 border border-gold-500/20">
@@ -105,22 +111,26 @@ export default function Dashboard() {
                         <div className="inline-flex items-center justify-center p-4 glass rounded-2xl border border-gold-500/30 mb-8">
                             <RocketLaunchIcon className="w-12 h-12 text-gold-400 animate-pulse" />
                         </div>
-                        <h2 className="text-3xl sm:text-4xl font-display font-bold text-gold-400 tracking-tight mb-4 drop-shadow-glow">
+                        <h2 className="text-3xl sm:text-4xl font-display font-bold text-gold-400 tracking-tight mb-4 drop-shadow-glow animate-fade-in">
                             Bienvenido a tu Nuevo Showroom Digital
                         </h2>
-                        <p className="text-lg text-brand-200 mb-10 leading-relaxed">
-                            Tu motor de ventas B2B está listo. Sin embargo, tus clientes no pueden comprar si tus vitrinas están vacías. Sube tu primer producto estrella para empezar a recibir pedidos por WhatsApp hoy mismo.
+                        <p className="text-lg text-brand-200 mb-10 leading-relaxed animate-fade-in">
+                            Tu motor de ventas B2B está listo. <span className="text-gold-400 font-bold">¿Listo para tu primer pedido?</span> Sube tu producto estrella y comparte tu enlace para empezar a recibir pedidos por WhatsApp hoy mismo.
                         </p>
 
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                            <Link to="/admin/products" className="w-full sm:w-auto px-8 py-4 bg-gold-500 hover:bg-gold-400 text-brand-950 font-bold rounded-xl transition-all shadow-glow hover:scale-105 flex items-center justify-center gap-2 animate-pulse">
-                                Subir Primer Modelo
-                                <ArrowTopRightOnSquareIcon className="w-5 h-5" />
-                            </Link>
-                            <a href="https://youtu.be/dQw4w9WgXcQ" target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto px-8 py-4 glass hover:bg-white/10 text-gold-400 font-semibold rounded-xl border border-gold-500/30 transition-all backdrop-blur-md flex items-center justify-center gap-2 hover:scale-105">
-                                <SparklesIcon className="w-5 h-5" />
-                                Ver Tutorial Rápido
-                            </a>
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in">
+                            <Tooltip content="Haz clic aquí para subir tu primer producto y activar tu catálogo.">
+                                <Link to="/admin/products" className="w-full sm:w-auto px-8 py-4 bg-gold-500 hover:bg-gold-400 text-brand-950 font-bold rounded-xl transition-all shadow-glow hover:scale-105 flex items-center justify-center gap-2 animate-pulse focus:outline-none">
+                                    Subir Primer Modelo
+                                    <ArrowTopRightOnSquareIcon className="w-5 h-5" />
+                                </Link>
+                            </Tooltip>
+                            <Tooltip content="Mira un tutorial rápido para dominar tu showroom.">
+                                <a href="https://youtu.be/dQw4w9WgXcQ" target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto px-8 py-4 glass hover:bg-white/10 text-gold-400 font-semibold rounded-xl border border-gold-500/30 transition-all backdrop-blur-md flex items-center justify-center gap-2 hover:scale-105 focus:outline-none">
+                                    <SparklesIcon className="w-5 h-5" />
+                                    Ver Tutorial Rápido
+                                </a>
+                            </Tooltip>
                         </div>
                     </div>
                 </div>
@@ -131,7 +141,7 @@ export default function Dashboard() {
                         {statsCards.map((item) => (
                             <div
                                 key={item.name}
-                                className="relative overflow-hidden rounded-2xl glass p-6 shadow-glow border border-gold-500/10 hover:shadow-glass-dark transition-all group"
+                                className="relative overflow-hidden rounded-2xl glass p-6 shadow-glow border border-gold-500/10 hover:shadow-glass-dark transition-all group hover:scale-105 duration-300 animate-fade-in"
                             >
                                 <dt>
                                     <div className={`absolute rounded-xl ${item.color} bg-opacity-20 p-3 group-hover:scale-110 transition-transform shadow-glow`}> 

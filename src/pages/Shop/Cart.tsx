@@ -2,48 +2,70 @@ import { Link } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { useState } from 'react';
 import axios from 'axios';
+import { createOrder } from '../../services/order.service';
+import { Toast } from '../../components/Toast';
 
 export default function Cart() {
-    const { items, removeFromCart, total, clearCart } = useCart();
+    const { items, removeFromCart, updateQuantity, total, clearCart } = useCart();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [lead, setLead] = useState({ name: '', phone: '' });
+    const [feedback, setFeedback] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
     const handleWhatsAppCheckout = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (items.length === 0 || !lead.phone || !lead.name) return;
+        setFeedback(null);
+        if (items.length === 0 || !lead.phone || !lead.name) {
+            setFeedback({ message: 'Completa todos los campos y agrega productos al carrito.', type: 'warning' });
+            return;
+        }
 
         setIsSubmitting(true);
         try {
-            // Optional: Register Lead in Backend
+            // 1. Registrar Lead en Backend
             await axios.post(`${API_URL}/leads`, {
                 name: lead.name,
                 phone: lead.phone,
-                companyId: 'default' // Or extract from subdomain
+                companyId: 'default'
             });
 
-            // Generate WhatsApp Link
-            const vendorPhone = '5214770000000'; // Target phone in Leon MX
-            let text = `¡Hola! Soy ${lead.name}.\n\nMe interesa levantar el siguiente pedido de su catálogo:\n\n`;
+            // 2. Crear Orden en Backend
+            const orderPayload = {
+                customerId: undefined, // Si hay login, usar el ID real
+                items: items.map(item => ({
+                    productId: item.productId,
+                    variantId: item.variantId,
+                    name: item.name,
+                    price: item.price,
+                    image: item.image,
+                    size: item.size,
+                    color: item.color,
+                    quantity: item.quantity,
+                    subtotal: item.subtotal
+                })),
+                notes: `Pedido desde carrito web. Lead: ${lead.name} (${lead.phone})`
+            };
+            await createOrder(orderPayload);
 
+            // 3. Generar mensaje WhatsApp
+            const vendorPhone = '5214770000000';
+            let text = `¡Hola! Soy ${lead.name}.\n\nMe interesa levantar el siguiente pedido de su catálogo:\n\n`;
             items.forEach((item, index) => {
                 text += `${index + 1}. ${item.name} | Color: ${item.color} | Talla: ${item.size} | Cantidad: ${item.quantity} pares | Sub: $${item.subtotal.toLocaleString()}\n`;
             });
             text += `\n*TOTAL ESTIMADO:* $${total.toLocaleString()}\n\nPor favor, confírmeme existencia y tiempos de entrega.`;
-
             const encodedText = encodeURIComponent(text);
             const waUrl = `https://wa.me/${vendorPhone}?text=${encodedText}`;
 
-            // Open WhatsApp
+            // 4. Abrir WhatsApp y limpiar carrito
             window.open(waUrl, '_blank');
-
             clearCart();
-            // Redirect or show success msg?
-            window.location.href = '/';
+            setFeedback({ message: '¡Pedido enviado y registrado! Redirigiendo...', type: 'success' });
+            setTimeout(() => { window.location.href = '/'; }, 2000);
         } catch (error) {
-            console.error('Error in checkout:', error);
-            alert('Hubo un error al procesar tu solicitud.');
+            console.error('Error en checkout:', error);
+            setFeedback({ message: 'Hubo un error al procesar tu pedido. Intenta de nuevo.', type: 'error' });
         } finally {
             setIsSubmitting(false);
         }
@@ -53,6 +75,14 @@ export default function Cart() {
         <div className="bg-slate-50 min-h-screen py-12">
             <div className="mx-auto max-w-2xl px-4 sm:px-6 lg:max-w-7xl lg:px-8">
                 <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">Tu Pedido Express</h1>
+
+                {feedback && (
+                    <Toast
+                        message={feedback.message}
+                        type={feedback.type}
+                        onClose={() => setFeedback(null)}
+                    />
+                )}
 
                 <div className="mt-12 lg:grid lg:grid-cols-12 lg:items-start lg:gap-x-12 xl:gap-x-16">
                     <section aria-labelledby="cart-heading" className="lg:col-span-7">
@@ -81,10 +111,37 @@ export default function Cart() {
                                                     <p>{item.color}</p>
                                                     {item.size && <p className="ml-4 border-l border-slate-200 pl-4">{item.size}</p>}
                                                 </div>
-                                                <p className="mt-1 flex space-x-2 text-sm text-slate-700">
-                                                    <span>${item.price?.toLocaleString() || 'Consultar'} x {item.quantity}</span>
-                                                </p>
-                                                <p className="mt-1 text-sm font-bold text-indigo-600">Subtotal: ${item.subtotal.toLocaleString()}</p>
+                                                <div className="mt-2 flex items-center gap-3">
+                                                    <label className="text-sm text-slate-600 font-medium">Cantidad:</label>
+                                                    <div className="flex items-center gap-2 border border-slate-300 rounded-lg">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => updateQuantity(productIdx, item.quantity - 1)}
+                                                            className="px-3 py-1 text-slate-600 hover:bg-slate-100 transition-colors font-bold"
+                                                        >
+                                                            −
+                                                        </button>
+                                                        <input
+                                                            type="number"
+                                                            min="1"
+                                                            value={item.quantity}
+                                                            onChange={(e) => {
+                                                                const newQty = parseInt(e.target.value) || 1;
+                                                                if (newQty > 0) updateQuantity(productIdx, newQty);
+                                                            }}
+                                                            className="w-16 text-center border-0 focus:ring-0 py-1 font-bold text-slate-900"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => updateQuantity(productIdx, item.quantity + 1)}
+                                                            className="px-3 py-1 text-slate-600 hover:bg-slate-100 transition-colors font-bold"
+                                                        >
+                                                            +
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <p className="mt-2 text-sm text-slate-600">${item.price?.toLocaleString() || 'Consultar'} × {item.quantity} pares</p>
+                                                <p className="mt-1 text-base font-bold text-indigo-600">Subtotal: ${item.subtotal.toLocaleString()}</p>
                                             </div>
 
                                             <div className="mt-4 sm:mt-0 sm:pr-9 flex justify-end">

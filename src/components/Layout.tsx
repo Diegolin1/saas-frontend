@@ -241,7 +241,7 @@ export default function Layout() {
                     </main>
                 {/* Botón flotante de acción rápida */}
                 <button
-                    className="fixed z-40 bottom-8 right-8 flex items-center gap-2 bg-gold-500 text-brand-950 font-bold px-6 py-3 rounded-full shadow-glow hover:bg-gold-400 transition-all duration-300 animate-pulse hover:scale-105 focus:outline-none focus:ring-4 focus:ring-gold-400"
+                    className="fixed z-40 bottom-8 right-8 flex items-center gap-2 bg-gold-500 text-brand-950 font-bold px-6 py-3 rounded-full shadow-glow hover:bg-gold-400 transition-all duration-300 animate-pulse hover:scale-110 focus:outline-none focus:ring-4 focus:ring-gold-400"
                     style={{ boxShadow: '0 0 32px 0 rgba(212,175,55,0.25)' }}
                     onClick={() => window.location.href = '/admin/products/new'}
                 >

@@ -64,7 +64,7 @@ export default function Products() {
                         const isBestSeller = product.tags?.includes('best-seller');
                         const isOutOfStock = stock === 0;
                         return (
-                            <div key={product.id} className="relative glass p-5 rounded-2xl shadow-glow border border-gold-500/10 flex flex-col items-center group transition-all hover:shadow-glass-dark">
+                            <div key={product.id} className="relative glass p-5 rounded-2xl shadow-glow border border-gold-500/10 flex flex-col items-center group transition-all hover:shadow-glass-dark hover:scale-105 duration-300 animate-fade-in">
                                 {/* Imagen del producto */}
                                 {product.images && product.images.length > 0 ? (
                                     <img src={product.images[0].url} alt={product.name} className="h-40 w-40 object-cover rounded-xl mb-4 shadow-glass-dark border-2 border-brand-100 group-hover:scale-105 transition-transform" />
@@ -98,15 +98,15 @@ export default function Products() {
                                 {/* Acciones */}
                                 <div className="flex gap-3 mt-auto">
                                     <button
-                                        className="flex items-center gap-1 px-4 py-2 rounded-full bg-brand-900 text-gold-400 font-bold shadow-glow hover:bg-brand-800 hover:text-gold-500 transition-all text-sm"
+                                        className="flex items-center gap-1 px-4 py-2 rounded-full bg-brand-900 text-gold-400 font-bold shadow-glow hover:bg-brand-800 hover:text-gold-500 transition-all text-sm hover:scale-105 duration-200"
                                         onClick={() => navigator.share ? navigator.share({ title: product.name, url: window.location.origin + '/shop/' + product.id }) : navigator.clipboard.writeText(window.location.origin + '/shop/' + product.id)}
                                     >
                                         <ShareIcon className="h-4 w-4" /> Compartir
                                     </button>
-                                    <Link to={`/products/${product.id}/edit`} className="flex items-center gap-1 px-4 py-2 rounded-full bg-gold-500 text-brand-950 font-bold shadow-glow hover:bg-gold-400 transition-all text-sm">
+                                    <Link to={`/products/${product.id}/edit`} className="flex items-center gap-1 px-4 py-2 rounded-full bg-gold-500 text-brand-950 font-bold shadow-glow hover:bg-gold-400 transition-all text-sm hover:scale-105 duration-200">
                                         <PencilSquareIcon className="h-4 w-4" /> Editar
                                     </Link>
-                                    <button onClick={() => handleDelete(product.id)} className="flex items-center gap-1 px-4 py-2 rounded-full bg-red-100 text-red-600 font-bold shadow hover:bg-red-200 transition-all text-sm">
+                                    <button onClick={() => handleDelete(product.id)} className="flex items-center gap-1 px-4 py-2 rounded-full bg-red-100 text-red-600 font-bold shadow hover:bg-red-200 transition-all text-sm hover:scale-105 duration-200">
                                         <TrashIcon className="h-4 w-4" /> Eliminar
                                     </button>
                                 </div>
