@@ -30,6 +30,7 @@ export interface Product {
     variants: ProductVariant[];
     images: ProductImage[];
     isActive: boolean;
+    tags?: string[]; // Opcional para insignias premium
 }
 
 export const getProducts = async () => {

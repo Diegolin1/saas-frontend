@@ -9,9 +9,7 @@ import {
     ShoppingBagIcon,
     ClipboardDocumentListIcon,
     ShoppingCartIcon,
-    ChatBubbleLeftRightIcon,
-    Cog6ToothIcon,
-    CreditCardIcon
+    Cog6ToothIcon
 } from '@heroicons/react/24/outline'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
