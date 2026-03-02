@@ -79,7 +79,7 @@ const ProductForm = () => {
                 }))
             };
             await createProduct(payload);
-            navigate('/products');
+            navigate('/admin/products');
         } catch (error) {
             console.error('Error creating product:', error);
             setError('Error al crear producto. Intenta de nuevo.');
@@ -217,7 +217,7 @@ const ProductForm = () => {
 
                 <div className="pt-5">
                     <div className="flex justify-end gap-3">
-                        <button type="button" onClick={() => navigate('/products')} className="rounded-full border-2 border-gold-400 bg-white py-2 px-6 text-base font-bold text-gold-500 shadow-glow hover:bg-gold-50 focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 transition-all">
+                        <button type="button" onClick={() => navigate('/admin/products')} className="rounded-full border-2 border-gold-400 bg-white py-2 px-6 text-base font-bold text-gold-500 shadow-glow hover:bg-gold-50 focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 transition-all">
                             Cancelar
                         </button>
                         <button type="submit" disabled={loading} className="inline-flex justify-center rounded-full border border-transparent bg-gold-500 py-2 px-8 text-base font-bold text-brand-950 shadow-glow hover:bg-gold-400 focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 transition-all animate-pulse">
