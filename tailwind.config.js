@@ -4,6 +4,24 @@ export default {
         "./index.html",
         "./src/**/*.{js,ts,jsx,tsx}",
     ],
+    safelist: [
+        'bg-stone-950',
+        'bg-stone-900',
+        'bg-stone-900/80',
+        'bg-stone-900/60',
+        'from-stone-900',
+        'via-amber-950',
+        'to-stone-950',
+        'border-amber-500/20',
+        'text-amber-500',
+        'text-stone-300',
+        'text-stone-400',
+        'text-amber-200/70',
+        'hover:text-amber-400',
+        'bg-amber-600',
+        'hover:bg-amber-500',
+        'bg-stone-800'
+    ],
     theme: {
         extend: {
             fontFamily: {

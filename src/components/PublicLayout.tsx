@@ -6,9 +6,9 @@ export default function PublicLayout() {
     const { itemCount } = useCart();
 
     return (
-        <div className="min-h-screen font-sans bg-stone-950">
+        <div className="min-h-screen font-sans !bg-stone-950 text-white">
             {/* Premium Top Nav */}
-            <header className="sticky top-0 z-50 bg-stone-900/80 backdrop-blur-md border-b border-amber-500/20 shadow-lg">
+            <header className="sticky top-0 z-50 !bg-stone-900/80 backdrop-blur-md border-b !border-amber-500/20 shadow-lg">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
                         {/* Branding */}
@@ -41,12 +41,12 @@ export default function PublicLayout() {
             </header>
 
             {/* Main Content Area */}
-            <main>
+            <main className="!bg-stone-950">
                 <Outlet />
             </main>
 
             {/* Simple Footer */}
-            <footer className="bg-stone-950 border-t border-amber-500/10 mt-auto">
+            <footer className="!bg-stone-950 border-t !border-amber-500/10 mt-auto">
                 <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
                     <p className="text-center text-sm text-stone-500 font-medium">
                         &copy; {new Date().getFullYear()} Generado por SaaS B2B. El catálogo digital premium para León, Gto.
