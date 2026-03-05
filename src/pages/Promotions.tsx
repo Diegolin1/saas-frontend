@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getPromotions, createPromotion, updatePromotion, deletePromotion, Promotion } from '../services/promotion.service';
+import { getErrorMessage } from '../services/api';
 import { Dialog } from '@headlessui/react';
 import { PlusIcon, TrashIcon, XMarkIcon, GiftIcon } from '@heroicons/react/24/outline';
 
@@ -36,8 +37,8 @@ export default function Promotions() {
             setIsModalOpen(false);
             setFormData({ code: '', discount: '', type: 'PERCENTAGE', expiresAt: '' });
             loadData();
-        } catch (err: any) {
-            setError(err.response?.data?.error || 'Error al crear la promoción');
+        } catch (err: unknown) {
+            setError(getErrorMessage(err, 'Error al crear la promoción'));
         }
     };
 
@@ -45,8 +46,8 @@ export default function Promotions() {
         try {
             await updatePromotion(promo.id, { isActive: !promo.isActive });
             setPromotions(prev => prev.map(p => p.id === promo.id ? { ...p, isActive: !p.isActive } : p));
-        } catch (err: any) {
-            alert(err.response?.data?.error || 'Error al actualizar');
+        } catch (err: unknown) {
+            alert(getErrorMessage(err, 'Error al actualizar'));
         }
     };
 
@@ -55,8 +56,8 @@ export default function Promotions() {
         try {
             await deletePromotion(id);
             loadData();
-        } catch (err: any) {
-            alert(err.response?.data?.error || 'Error al eliminar');
+        } catch (err: unknown) {
+            alert(getErrorMessage(err, 'Error al eliminar'));
         }
     };
 

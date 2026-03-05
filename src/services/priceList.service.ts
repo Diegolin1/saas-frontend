@@ -1,11 +1,4 @@
-import axios from 'axios';
-
-const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/price-lists`;
-
-const getAuthHeader = () => {
-    const token = localStorage.getItem('token');
-    return { headers: { Authorization: `Bearer ${token}` } };
-};
+import api from './api';
 
 export interface PriceList {
     id: string;
@@ -14,34 +7,32 @@ export interface PriceList {
     isDefault: boolean;
 }
 
-// ... existing imports
-
 export const getPriceLists = async () => {
-    const response = await axios.get(API_URL, getAuthHeader());
+    const response = await api.get('/price-lists');
     return response.data;
 };
 
 export const createPriceList = async (data: { name: string, currency: string }) => {
-    const response = await axios.post(API_URL, data, getAuthHeader());
+    const response = await api.post('/price-lists', data);
     return response.data;
 };
 
 export const deletePriceList = async (id: string) => {
-    const response = await axios.delete(`${API_URL}/${id}`, getAuthHeader());
+    const response = await api.delete(`/price-lists/${id}`);
     return response.data;
 };
 
 export const getPriceListItems = async (priceListId: string) => {
-    const response = await axios.get(`${API_URL}/${priceListId}/items`, getAuthHeader());
+    const response = await api.get(`/price-lists/${priceListId}/items`);
     return response.data;
 };
 
 export const upsertProductPrice = async (priceListId: string, productId: string, price: number) => {
-    const response = await axios.post(`${API_URL}/${priceListId}/items`, { productId, price }, getAuthHeader());
+    const response = await api.post(`/price-lists/${priceListId}/items`, { productId, price });
     return response.data;
 };
 
 export const removeProductPrice = async (priceListId: string, productId: string) => {
-    const response = await axios.delete(`${API_URL}/${priceListId}/items/${productId}`, getAuthHeader());
+    const response = await api.delete(`/price-lists/${priceListId}/items/${productId}`);
     return response.data;
 };

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom'
 import { CartProvider } from './context/CartContext'
 import Layout from './components/Layout'
 import PublicLayout from './components/PublicLayout'
@@ -19,6 +19,21 @@ import { AuthProvider } from './context/AuthContext'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import ProtectedRoute from './components/ProtectedRoute'
+
+// Simple 404 page
+function NotFound() {
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <div className="text-center space-y-4">
+                <h1 className="text-6xl font-bold text-gray-300">404</h1>
+                <p className="text-xl text-gray-600">Página no encontrada</p>
+                <Link to="/" className="inline-block px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                    Ir al inicio
+                </Link>
+            </div>
+        </div>
+    )
+}
 
 function App() {
     return (
@@ -69,6 +84,9 @@ function App() {
 
                         {/* Redirect legacy /shop to / */}
                         <Route path="/shop" element={<Navigate to="/" replace />} />
+
+                        {/* 404 catch-all */}
+                        <Route path="*" element={<NotFound />} />
                     </Routes>
                 </BrowserRouter>
             </CartProvider>

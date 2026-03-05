@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { jwtDecode } from 'jwt-decode';
 
 interface User {
@@ -25,10 +25,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
     const [loading, setLoading] = useState(true);
 
+    const logout = useCallback(() => {
+        setToken(null);
+        setUser(null);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user_data');
+        localStorage.removeItem('saas_cart_items');
+        localStorage.removeItem('saas_cart_id');
+        localStorage.removeItem('b2b_lead');
+        // Don't use window.location.href — let React Router handle navigation
+        // The ProtectedRoute will redirect to /login automatically
+    }, []);
+
     useEffect(() => {
         if (token) {
             try {
-                const decoded: any = jwtDecode(token);
+                const decoded = jwtDecode<{ exp: number }>(token);
                 if (decoded.exp * 1000 < Date.now()) {
                     logout();
                 } else {
@@ -54,13 +66,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                             });
                         }
                     }
+
+                    // Set up auto-logout when token expires
+                    const msUntilExpiry = decoded.exp * 1000 - Date.now();
+                    const timer = setTimeout(() => {
+                        logout();
+                    }, msUntilExpiry);
+                    return () => clearTimeout(timer);
                 }
             } catch (error) {
                 logout();
             }
         }
         setLoading(false);
-    }, [token]);
+    }, [token, logout]);
 
     const login = (newToken: string, userData: User) => {
         setToken(newToken);
@@ -69,19 +88,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('user_data', JSON.stringify(userData));
     };
 
-    const logout = () => {
-        setToken(null);
-        setUser(null);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user_data');
-        localStorage.removeItem('saas_cart_items');
-        localStorage.removeItem('saas_cart_id');
-        localStorage.removeItem('b2b_lead');
-        window.location.href = '/login';
-    };
-
     return (
-        <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!token, loading }}>
+        <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!token && !!user, loading }}>
             {children}
         </AuthContext.Provider>
     );

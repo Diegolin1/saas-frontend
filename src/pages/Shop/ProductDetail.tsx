@@ -75,10 +75,11 @@ export default function ProductDetail() {
                     console.error(`[ProductDetail] ✗ Producto ${id} no encontrado en catálogo de companyId ${companyId}`)
                     setFeedback({ message: `Producto no encontrado en el catálogo. CompanyId: ${companyId}`, type: 'error' })
                 }
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error('[ProductDetail] Error cargando catálogo público:', err)
-                console.error('[ProductDetail] Error detalles:', err.response?.data, err.message)
-                setFeedback({ message: `No se pudo cargar el catálogo. Error: ${err.message}`, type: 'error' })
+                const message = err instanceof Error ? err.message : 'Error desconocido';
+                console.error('[ProductDetail] Error detalles:', message)
+                setFeedback({ message: `No se pudo cargar el catálogo. Error: ${message}`, type: 'error' })
             } finally {
                 setLoading(false)
             }

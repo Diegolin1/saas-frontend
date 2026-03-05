@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { getCustomers, createCustomer, updateCustomer, deleteCustomer, Customer } from '../services/customer.service';
+import { getCustomers, createCustomer, updateCustomer, deleteCustomer, Customer, PaginationInfo } from '../services/customer.service';
 import { getPriceLists, PriceList } from '../services/priceList.service';
 import { getUsers, User } from '../services/user.service'; // Import user service
 import { Dialog } from '@headlessui/react';
 import { PlusIcon, PencilSquareIcon, TrashIcon, XMarkIcon, UserIcon } from '@heroicons/react/24/outline'; // Added UserIcon
+import Pagination from '../components/Pagination';
 
 export default function Customers() {
     const [customers, setCustomers] = useState<Customer[]>([]);
@@ -12,6 +13,10 @@ export default function Customers() {
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentCustomer, setCurrentCustomer] = useState<Partial<Customer> | null>(null);
+    const [page, setPage] = useState(1);
+    const [pagination, setPagination] = useState<PaginationInfo | null>(null);
+    const [search, setSearch] = useState('');
+    const [searchDebounce, setSearchDebounce] = useState('');
     const [formData, setFormData] = useState<Partial<Customer>>({
         businessName: '',
         taxId: '',
@@ -21,16 +26,27 @@ export default function Customers() {
         sellerId: '' // Added sellerId
     });
 
+    // Debounce search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setSearchDebounce(search);
+            setPage(1);
+        }, 400);
+        return () => clearTimeout(timer);
+    }, [search]);
+
     const loadData = async () => {
         try {
-            const [customersData, priceListsData, usersData] = await Promise.all([
-                getCustomers(),
+            setLoading(true);
+            const [customersRes, priceListsData, usersRes] = await Promise.all([
+                getCustomers({ page, search: searchDebounce || undefined }),
                 getPriceLists(),
-                getUsers()
+                getUsers({ limit: 100 })
             ]);
-            setCustomers(customersData);
+            setCustomers(customersRes.customers);
+            setPagination(customersRes.pagination);
             setPriceLists(priceListsData);
-            setUsers(usersData);
+            setUsers(usersRes.users);
         } catch (error) {
             console.error('Error al cargar datos:', error);
         } finally {
@@ -40,7 +56,7 @@ export default function Customers() {
 
     useEffect(() => {
         loadData();
-    }, []);
+    }, [page, searchDebounce]);
 
     const openModal = (customer?: Customer) => {
         if (customer) {
@@ -118,6 +134,16 @@ export default function Customers() {
                     </button>
                 </div>
             </div>
+            {/* Búsqueda */}
+            <div className="mt-4">
+                <input
+                    type="text"
+                    placeholder="Buscar por razón social, email o código..."
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    className="w-full max-w-sm rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+            </div>
             <div className="mt-8 flow-root">
                 <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
                     <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
@@ -176,6 +202,15 @@ export default function Customers() {
                     </div>
                 </div>
             </div>
+            {pagination && (
+                <Pagination
+                    page={pagination.page}
+                    totalPages={pagination.totalPages}
+                    total={pagination.total}
+                    limit={pagination.limit}
+                    onPageChange={setPage}
+                />
+            )}
 
             {/* Modal */}
             <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} className="relative z-50">

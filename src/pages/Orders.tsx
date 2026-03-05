@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { DocumentTextIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
-import { getOrders, updateOrderStatus } from '../services/order.service';
+import { getOrders, updateOrderStatus, PaginationInfo, Order } from '../services/order.service';
 import { useAuth } from '../context/AuthContext';
+import Pagination from '../components/Pagination';
 
 const ORDER_STATUSES = ['PENDING', 'PRODUCTION', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
 
@@ -22,30 +23,39 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function Orders() {
-    const [orders, setOrders] = useState<any[]>([]);
+    const [orders, setOrders] = useState<(Order & { date: string; customerName: string })[]>([]);
     const [loading, setLoading] = useState(true);
     const [updatingId, setUpdatingId] = useState<string | null>(null);
+    const [page, setPage] = useState(1);
+    const [pagination, setPagination] = useState<PaginationInfo | null>(null);
+    const [statusFilter, setStatusFilter] = useState('');
     const { user } = useAuth();
     const canChangeStatus = user && ['OWNER', 'ADMIN', 'SUPERVISOR'].includes(user.role);
 
-    const fetchOrders = () => {
+    const fetchOrders = (p = page) => {
         setLoading(true);
-        getOrders()
+        getOrders({ page: p, status: statusFilter || undefined })
             .then(data => {
-                const formatted = data.map((o: any) => ({
+                const formatted = data.orders.map((o) => ({
                     ...o,
                     date: new Date(o.createdAt).toLocaleDateString('es-MX'),
                     customerName: o.customer?.businessName || 'N/A'
                 }));
                 setOrders(formatted);
+                setPagination(data.pagination);
             })
             .catch(err => console.error(err))
             .finally(() => setLoading(false));
     };
 
     useEffect(() => {
-        fetchOrders();
-    }, []);
+        fetchOrders(1);
+        setPage(1);
+    }, [statusFilter]);
+
+    useEffect(() => {
+        fetchOrders(page);
+    }, [page]);
 
     const handleStatusChange = async (orderId: string, newStatus: string) => {
         setUpdatingId(orderId);
@@ -76,6 +86,19 @@ export default function Orders() {
                     </p>
                 </div>
             </div>
+            <div className="mt-4 flex items-center gap-4">
+                <label className="text-sm font-medium text-gray-700">Filtrar por estado:</label>
+                <select
+                    value={statusFilter}
+                    onChange={e => setStatusFilter(e.target.value)}
+                    className="rounded-md border-gray-300 border px-3 py-1.5 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                >
+                    <option value="">Todos</option>
+                    {ORDER_STATUSES.map(s => (
+                        <option key={s} value={s}>{statusLabels[s]}</option>
+                    ))}
+                </select>
+            </div>
             <div className="mt-8 flow-root">
                 <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
                     <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
@@ -104,6 +127,9 @@ export default function Orders() {
                                             </th>
                                             <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                                                 Total
+                                            </th>
+                                            <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                                                Descuento
                                             </th>
                                             <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
                                                 <span className="sr-only">Acciones</span>
@@ -142,6 +168,20 @@ export default function Orders() {
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm font-semibold text-gray-900">
                                                     ${Number(order.total).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                                                 </td>
+                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                                    {order.discountAmount > 0 ? (
+                                                        <span className="inline-flex items-center gap-1">
+                                                            <span className="inline-flex rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
+                                                                {order.promotionCode}
+                                                            </span>
+                                                            <span className="text-green-600 font-medium">
+                                                                -${Number(order.discountAmount).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                                                            </span>
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-gray-400">—</span>
+                                                    )}
+                                                </td>
                                                 <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                                                     {order.invoiced ? (
                                                         <span className="text-green-600 flex items-center justify-end gap-1">
@@ -166,6 +206,15 @@ export default function Orders() {
                     </div>
                 </div>
             </div>
+            {pagination && (
+                <Pagination
+                    page={pagination.page}
+                    totalPages={pagination.totalPages}
+                    total={pagination.total}
+                    limit={pagination.limit}
+                    onPageChange={setPage}
+                />
+            )}
         </div>
     );
 }

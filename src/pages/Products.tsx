@@ -1,16 +1,32 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getProducts, deleteProduct, Product } from '../services/product.service';
-import { PlusIcon, PencilSquareIcon, TrashIcon, StarIcon, ExclamationTriangleIcon, ShareIcon } from '@heroicons/react/24/outline';
+import { getProducts, deleteProduct, Product, PaginationInfo } from '../services/product.service';
+import { PlusIcon, PencilSquareIcon, TrashIcon, StarIcon, ExclamationTriangleIcon, ShareIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import Pagination from '../components/Pagination';
 
 export default function Products() {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(1);
+    const [pagination, setPagination] = useState<PaginationInfo | null>(null);
+    const [search, setSearch] = useState('');
+    const [searchDebounce, setSearchDebounce] = useState('');
+
+    // Debounce search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setSearchDebounce(search);
+            setPage(1);
+        }, 400);
+        return () => clearTimeout(timer);
+    }, [search]);
 
     const fetchProducts = async () => {
         try {
-            const data = await getProducts();
-            setProducts(data);
+            setLoading(true);
+            const data = await getProducts({ page, search: searchDebounce || undefined });
+            setProducts(data.products);
+            setPagination(data.pagination);
         } catch (error) {
             console.error('Error fetching products:', error);
         } finally {
@@ -20,7 +36,7 @@ export default function Products() {
 
     useEffect(() => {
         fetchProducts();
-    }, []);
+    }, [page, searchDebounce]);
 
     const handleDelete = async (id: string) => {
         if (window.confirm('¿Estás seguro de eliminar este producto?')) {
@@ -52,6 +68,17 @@ export default function Products() {
                             Nuevo Producto
                         </Link>
                     </div>
+                </div>
+
+                {/* Búsqueda */}
+                <div className="mb-8">
+                    <input
+                        type="text"
+                        placeholder="Buscar por nombre, SKU o categoría..."
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        className="w-full max-w-md rounded-full border border-brand-200 bg-white/80 px-5 py-2.5 text-sm text-brand-900 placeholder:text-brand-400 focus:border-gold-400 focus:ring-2 focus:ring-gold-300 shadow-sm"
+                    />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -169,6 +196,16 @@ export default function Products() {
                         })
                     )}
                 </div>
+
+                {pagination && (
+                    <Pagination
+                        page={pagination.page}
+                        totalPages={pagination.totalPages}
+                        total={pagination.total}
+                        limit={pagination.limit}
+                        onPageChange={setPage}
+                    />
+                )}
             </div>
         </div>
     );

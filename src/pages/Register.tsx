@@ -50,8 +50,8 @@ const Register = () => {
 
             login(data.token, data.user);
             navigate('/admin');
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Error al registrar.');
         }
     };
 

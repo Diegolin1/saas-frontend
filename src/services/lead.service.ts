@@ -1,6 +1,11 @@
-import axios from 'axios';
+import api from './api';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+export interface PaginationInfo {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+}
 
 export interface Lead {
     id: string;
@@ -17,11 +22,11 @@ export interface Lead {
     }[];
 }
 
-export const getLeads = async (): Promise<Lead[]> => {
-    const response = await axios.get(`${API_URL}/leads`, {
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
-    });
+export const getLeads = async (params?: { page?: number; limit?: number }): Promise<{ leads: Lead[]; pagination: PaginationInfo }> => {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set('page', String(params.page));
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    const qs = searchParams.toString();
+    const response = await api.get(`/leads${qs ? '?' + qs : ''}`);
     return response.data;
 };

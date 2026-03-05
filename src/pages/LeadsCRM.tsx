@@ -1,16 +1,21 @@
 import { useState, useEffect } from 'react';
-import { getLeads, Lead } from '../services/lead.service';
+import { getLeads, Lead, PaginationInfo } from '../services/lead.service';
 import { ShoppingCartIcon, ChatBubbleLeftEllipsisIcon, PhoneIcon } from '@heroicons/react/24/outline';
 import { Tooltip } from '../components/Tooltip';
+import Pagination from '../components/Pagination';
 
 export default function LeadsCRM() {
     const [leads, setLeads] = useState<Lead[]>([]);
     const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(1);
+    const [pagination, setPagination] = useState<PaginationInfo | null>(null);
 
     const loadData = async () => {
         try {
-            const data = await getLeads();
-            setLeads(data);
+            setLoading(true);
+            const data = await getLeads({ page });
+            setLeads(data.leads);
+            setPagination(data.pagination);
         } catch (error) {
             console.error('Error loading leads:', error);
         } finally {
@@ -20,7 +25,7 @@ export default function LeadsCRM() {
 
     useEffect(() => {
         loadData();
-    }, []);
+    }, [page]);
 
     const handleWhatsAppRecovery = (lead: Lead) => {
         const activeCart = lead.carts?.[0];
@@ -140,6 +145,15 @@ export default function LeadsCRM() {
                     </div>
                 </div>
             </div>
+            {pagination && (
+                <Pagination
+                    page={pagination.page}
+                    totalPages={pagination.totalPages}
+                    total={pagination.total}
+                    limit={pagination.limit}
+                    onPageChange={setPage}
+                />
+            )}
         </div>
     );
 }

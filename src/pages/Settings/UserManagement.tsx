@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { getUsers, createUser, updateUser, deleteUser, User } from '../../services/user.service';
+import { getUsers, createUser, updateUser, deleteUser, User, PaginationInfo } from '../../services/user.service';
+import { getErrorMessage } from '../../services/api';
 import { Dialog } from '@headlessui/react';
 import { XMarkIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../../context/AuthContext';
+import Pagination from '../../components/Pagination';
 
 const ROLE_LABELS: Record<string, string> = {
     OWNER: 'Propietario',
@@ -28,13 +30,17 @@ const UserManagement = () => {
     const [formData, setFormData] = useState({ fullName: '', email: '', password: '', role: 'SELLER' });
     const [error, setError] = useState('');
     const [updatingRole, setUpdatingRole] = useState<string | null>(null);
+    const [page, setPage] = useState(1);
+    const [pagination, setPagination] = useState<PaginationInfo | null>(null);
 
     const canEditRole = currentUser?.role === 'OWNER' || currentUser?.role === 'ADMIN';
 
     const fetchUsers = async () => {
         try {
-            const data = await getUsers();
-            setUsers(data);
+            setLoading(true);
+            const data = await getUsers({ page });
+            setUsers(data.users);
+            setPagination(data.pagination);
         } catch (err) {
             console.error(err);
         } finally {
@@ -44,7 +50,7 @@ const UserManagement = () => {
 
     useEffect(() => {
         fetchUsers();
-    }, []);
+    }, [page]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -54,18 +60,18 @@ const UserManagement = () => {
             setIsModalOpen(false);
             setFormData({ fullName: '', email: '', password: '', role: 'SELLER' });
             fetchUsers();
-        } catch (err: any) {
-            setError(err.response?.data?.error || 'Error al crear el usuario.');
+        } catch (err: unknown) {
+            setError(getErrorMessage(err, 'Error al crear el usuario.'));
         }
     };
 
     const handleRoleChange = async (userId: string, newRole: string) => {
         setUpdatingRole(userId);
         try {
-            await updateUser(userId, { role: newRole });
+            await updateUser(userId, { role: newRole as 'OWNER' | 'ADMIN' | 'SUPERVISOR' | 'SELLER' | 'BUYER' });
             setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
-        } catch (err: any) {
-            alert(err.response?.data?.error || 'Error al cambiar el rol.');
+        } catch (err: unknown) {
+            alert(getErrorMessage(err, 'Error al cambiar el rol.'));
         } finally {
             setUpdatingRole(null);
         }
@@ -76,8 +82,8 @@ const UserManagement = () => {
             try {
                 await deleteUser(id);
                 fetchUsers();
-            } catch (err: any) {
-                alert(err.response?.data?.error || 'Error al eliminar el usuario.');
+            } catch (err: unknown) {
+                alert(getErrorMessage(err, 'Error al eliminar el usuario.'));
             }
         }
     };
@@ -148,6 +154,16 @@ const UserManagement = () => {
                     </li>
                 ))}
             </ul>
+
+            {pagination && (
+                <Pagination
+                    page={pagination.page}
+                    totalPages={pagination.totalPages}
+                    total={pagination.total}
+                    limit={pagination.limit}
+                    onPageChange={setPage}
+                />
+            )}
 
             {/* Modal */}
             <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} className="relative z-50">

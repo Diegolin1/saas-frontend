@@ -32,8 +32,8 @@ const Login = () => {
             login(data.token, data.user);
             // Redirect to admin dashboard
             navigate('/admin');
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Error al iniciar sesión.');
         }
     };
 

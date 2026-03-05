@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { createProduct, getProduct, updateProduct } from '../services/product.service';
+import { createProduct, getProduct, updateProduct, ProductVariant, ProductImage } from '../services/product.service';
+import { getErrorMessage } from '../services/api';
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { Toast } from '../components/Toast';
 
@@ -23,7 +24,7 @@ const ProductForm = () => {
         { size: '25', color: 'Negro', stock: 10 }
     ]);
 
-    const handleChange = (e: any) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
@@ -37,7 +38,7 @@ const ProductForm = () => {
         setFormData({ ...formData, images: [...formData.images, ''] });
     };
 
-    const handleVariantChange = (index: number, field: string, value: any) => {
+    const handleVariantChange = (index: number, field: string, value: string | number) => {
         const newVariants = [...variants];
         // @ts-ignore
         newVariants[index][field] = value;
@@ -63,14 +64,14 @@ const ProductForm = () => {
                     description: existing.description || '',
                     category: existing.category || 'Botas',
                     price: existing.price !== undefined && existing.price !== null ? String(existing.price) : '',
-                    images: (existing.images || []).map((img: any) => img.url) || ['']
+                    images: (existing.images || []).map((img: ProductImage) => img.url) || ['']
                 });
                 setVariants(
                     existing.variants && existing.variants.length > 0
-                        ? existing.variants.map((v: any) => ({ size: v.size || '', color: v.color || '', stock: v.stock ?? 0 }))
+                        ? existing.variants.map((v: ProductVariant) => ({ size: v.size || '', color: v.color || '', stock: v.stock ?? 0 }))
                         : [{ size: '25', color: 'Negro', stock: 10 }]
                 );
-            } catch (error: any) {
+            } catch (error: unknown) {
                 console.error('Error cargando producto:', error);
                 setFeedback({ message: 'No se pudo cargar el producto para editar.', type: 'error' });
             }
@@ -148,9 +149,9 @@ const ProductForm = () => {
             setTimeout(() => {
                 navigate('/admin/products');
             }, 2000);
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error creating product:', error);
-            const errorMessage = error.response?.data?.error || 'Error al crear producto. Intenta de nuevo.';
+            const errorMessage = getErrorMessage(error, 'Error al crear producto. Intenta de nuevo.');
             setFeedback({ message: errorMessage, type: 'error' });
         } finally {
             setLoading(false);

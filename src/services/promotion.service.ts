@@ -1,10 +1,4 @@
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-
-const getAuthHeader = () => ({
-    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-});
+import api from './api';
 
 export interface Promotion {
     id: string;
@@ -17,26 +11,26 @@ export interface Promotion {
 }
 
 export const getPromotions = async (): Promise<Promotion[]> => {
-    const response = await axios.get(`${API_URL}/promotions`, getAuthHeader());
+    const response = await api.get('/promotions');
     return response.data;
 };
 
 export const createPromotion = async (data: { code: string; discount: number; type: string; expiresAt?: string }) => {
-    const response = await axios.post(`${API_URL}/promotions`, data, getAuthHeader());
+    const response = await api.post('/promotions', data);
     return response.data;
 };
 
 export const updatePromotion = async (id: string, data: Partial<Promotion>) => {
-    const response = await axios.put(`${API_URL}/promotions/${id}`, data, getAuthHeader());
+    const response = await api.put(`/promotions/${id}`, data);
     return response.data;
 };
 
 export const deletePromotion = async (id: string) => {
-    const response = await axios.delete(`${API_URL}/promotions/${id}`, getAuthHeader());
+    const response = await api.delete(`/promotions/${id}`);
     return response.data;
 };
 
 export const validatePromoCode = async (code: string, companyId: string) => {
-    const response = await axios.post(`${API_URL}/promotions/validate`, { code, companyId });
+    const response = await api.post('/promotions/validate', { code, companyId });
     return response.data;
 };

@@ -15,8 +15,50 @@ export default function Cart() {
     const [feedback, setFeedback] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
     const [searchParams] = useSearchParams();
 
+    // Promotion state
+    const [promoCode, setPromoCode] = useState('');
+    const [promoValidating, setPromoValidating] = useState(false);
+    const [appliedPromo, setAppliedPromo] = useState<{ code: string; discount: number; type: string } | null>(null);
+
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
     const companyId = searchParams.get('companyId') || import.meta.env.VITE_COMPANY_ID || '';
+
+    // Calculate discount
+    const discountAmount = appliedPromo
+        ? appliedPromo.type === 'PERCENTAGE'
+            ? Math.round((total * appliedPromo.discount / 100) * 100) / 100
+            : Math.min(appliedPromo.discount, total)
+        : 0;
+    const finalTotal = Math.max(0, total - discountAmount);
+
+    const handleValidatePromo = async () => {
+        if (!promoCode.trim() || !companyId) return;
+        setPromoValidating(true);
+        setFeedback(null);
+        try {
+            const res = await axios.post(`${API_URL}/promotions/validate`, {
+                code: promoCode.trim(),
+                companyId
+            });
+            setAppliedPromo({
+                code: res.data.code,
+                discount: res.data.discount,
+                type: res.data.type
+            });
+            setFeedback({ message: `¡Código "${res.data.code}" aplicado! Descuento: ${res.data.type === 'PERCENTAGE' ? `${res.data.discount}%` : `$${res.data.discount}`}`, type: 'success' });
+        } catch {
+            setAppliedPromo(null);
+            setFeedback({ message: 'Código de promoción inválido o expirado.', type: 'error' });
+        } finally {
+            setPromoValidating(false);
+        }
+    };
+
+    const handleRemovePromo = () => {
+        setAppliedPromo(null);
+        setPromoCode('');
+        setFeedback(null);
+    };
 
     const handleWhatsAppCheckout = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -51,7 +93,8 @@ export default function Cart() {
                     quantity: item.quantity,
                     subtotal: item.subtotal
                 })),
-                notes: `Pedido desde carrito web. Lead: ${lead.name} (${lead.phone})`
+                notes: `Pedido desde carrito web. Lead: ${lead.name} (${lead.phone})`,
+                promotionCode: appliedPromo?.code || undefined
             };
             await createOrder(orderPayload);
 
@@ -189,13 +232,49 @@ export default function Cart() {
                                 <dt className="text-base text-stone-300">Total de Pares</dt>
                                 <dd className="text-lg font-bold text-white">{items.reduce((acc, item) => acc + item.quantity, 0)}</dd>
                             </div>
+                            {isB2BUnlocked && (
+                                <div className="flex items-center justify-between border-b border-amber-500/10 pb-4">
+                                    <dt className="text-base text-stone-300">Subtotal</dt>
+                                    <dd className="text-lg font-semibold text-white">${total.toLocaleString()}</dd>
+                                </div>
+                            )}
+                            {appliedPromo && discountAmount > 0 && (
+                                <div className="flex items-center justify-between border-b border-amber-500/10 pb-4">
+                                    <dt className="text-base text-green-400 flex items-center gap-2">
+                                        Descuento ({appliedPromo.code})
+                                        <button onClick={handleRemovePromo} className="text-xs text-stone-400 hover:text-red-400 underline">Quitar</button>
+                                    </dt>
+                                    <dd className="text-lg font-semibold text-green-400">-${discountAmount.toLocaleString()}</dd>
+                                </div>
+                            )}
                             <div className="flex items-center justify-between pt-2">
-                                <dt className="text-2xl font-bold text-white">Monto Total</dt>
+                                <dt className="text-2xl font-bold text-white">Total</dt>
                                 <dd className="text-3xl font-black text-amber-500 drop-shadow-md">
-                                    {isB2BUnlocked ? `$${total.toLocaleString()}` : 'Por Cotizar'}
+                                    {isB2BUnlocked ? `$${finalTotal.toLocaleString()}` : 'Por Cotizar'}
                                 </dd>
                             </div>
                         </dl>
+
+                        {/* Promotion Code */}
+                        {isB2BUnlocked && !appliedPromo && (
+                            <div className="mt-6 flex gap-2">
+                                <input
+                                    type="text"
+                                    value={promoCode}
+                                    onChange={(e) => setPromoCode(e.target.value)}
+                                    placeholder="Código de descuento"
+                                    className="flex-1 rounded-xl border-amber-500/30 py-2.5 px-4 bg-stone-950 text-white placeholder-stone-500 text-sm focus:border-amber-500 focus:ring-amber-500"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleValidatePromo}
+                                    disabled={promoValidating || !promoCode.trim()}
+                                    className="rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-amber-500 disabled:opacity-50 transition-colors"
+                                >
+                                    {promoValidating ? '...' : 'Aplicar'}
+                                </button>
+                            </div>
+                        )}
 
                         <form onSubmit={handleWhatsAppCheckout} className="mt-8 space-y-6">
                             <div>

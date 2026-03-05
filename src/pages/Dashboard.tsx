@@ -5,10 +5,36 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Tooltip } from '../components/Tooltip'
 
+interface DashboardStats {
+    salesToday: number;
+    salesMonth: number;
+    pendingOrders: number;
+    leadsCaptured: number;
+    abandonedCartsValue: number;
+    activeCartsCount: number;
+}
+
+interface LowStockItem {
+    id: string;
+    name: string;
+    variant: string;
+    stock: number;
+    image?: string;
+}
+
+interface TopProduct {
+    id: string;
+    name: string;
+    totalSold: number;
+    images?: { url: string }[];
+}
+
+const defaultStats: DashboardStats = { salesToday: 0, salesMonth: 0, pendingOrders: 0, leadsCaptured: 0, abandonedCartsValue: 0, activeCartsCount: 0 };
+
 export default function Dashboard() {
-    const [stats, setStats] = useState<any>(null)
-    const [topProducts, setTopProducts] = useState<any[]>([])
-    const [lowStock, setLowStock] = useState<any[]>([])
+    const [stats, setStats] = useState<DashboardStats | null>(null)
+    const [topProducts, setTopProducts] = useState<TopProduct[]>([])
+    const [lowStock, setLowStock] = useState<LowStockItem[]>([])
     const [loading, setLoading] = useState(true)
     const { user } = useAuth()
 
@@ -20,12 +46,12 @@ export default function Dashboard() {
                     getTopProducts(),
                     getLowStockProducts()
                 ])
-                setStats(statsData.status === 'fulfilled' ? (statsData.value || { salesToday: 0, salesMonth: 0, pendingOrders: 0, leadsCaptured: 0, abandonedCartsValue: 0, activeCartsCount: 0 }) : { salesToday: 0, salesMonth: 0, pendingOrders: 0, leadsCaptured: 0, abandonedCartsValue: 0, activeCartsCount: 0 })
+                setStats(statsData.status === 'fulfilled' ? (statsData.value || defaultStats) : defaultStats)
                 setTopProducts(topData.status === 'fulfilled' ? (topData.value || []) : [])
                 setLowStock(lowData.status === 'fulfilled' ? (lowData.value || []) : [])
             } catch (error) {
                 console.error('Error loading dashboard:', error)
-                setStats({ salesToday: 0, salesMonth: 0, pendingOrders: 0, leadsCaptured: 0, abandonedCartsValue: 0, activeCartsCount: 0 })
+                setStats(defaultStats)
             } finally {
                 setLoading(false)
             }
@@ -181,7 +207,7 @@ export default function Dashboard() {
                                 </div>
                             ) : (
                                 <ul className="divide-y divide-slate-100">
-                                    {lowStock.map((item: any) => (
+                                    {lowStock.map((item) => (
                                         <li key={`${item.id}-${item.variant}`} className="flex items-center justify-between py-3">
                                             <div className="flex items-center gap-3">
                                                 {item.image && <img src={item.image} alt={item.name} className="h-8 w-8 rounded object-cover" />}
@@ -218,7 +244,7 @@ export default function Dashboard() {
                                 </div>
                             ) : (
                                 <ul className="divide-y divide-slate-100">
-                                    {topProducts.map((item: any, i: number) => (
+                                    {topProducts.map((item, i) => (
                                         <li key={item.id || i} className="flex items-center justify-between py-3">
                                             <div className="flex items-center gap-3">
                                                 <span className="text-sm font-black text-slate-400 w-5">#{i + 1}</span>

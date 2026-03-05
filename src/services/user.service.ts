@@ -1,11 +1,11 @@
-import axios from 'axios';
+import api from './api';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-
-const getAuthHeader = () => {
-    const token = localStorage.getItem('token');
-    return { headers: { Authorization: `Bearer ${token}` } };
-};
+export interface PaginationInfo {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+}
 
 export interface User {
     id: string;
@@ -15,22 +15,39 @@ export interface User {
     createdAt: string;
 }
 
-export const getUsers = async () => {
-    const response = await axios.get(`${API_URL}/users`, getAuthHeader());
+export const getUsers = async (params?: { page?: number; limit?: number }): Promise<{ users: User[]; pagination: PaginationInfo }> => {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set('page', String(params.page));
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    const qs = searchParams.toString();
+    const response = await api.get(`/users${qs ? '?' + qs : ''}`);
     return response.data;
 };
 
-export const createUser = async (userData: any) => {
-    const response = await axios.post(`${API_URL}/users`, userData, getAuthHeader());
+export interface CreateUserData {
+    fullName: string;
+    email: string;
+    password: string;
+    role: 'OWNER' | 'ADMIN' | 'SUPERVISOR' | 'SELLER' | 'BUYER';
+}
+
+export interface UpdateUserData {
+    fullName?: string;
+    role?: 'OWNER' | 'ADMIN' | 'SUPERVISOR' | 'SELLER' | 'BUYER';
+    password?: string;
+}
+
+export const createUser = async (userData: CreateUserData) => {
+    const response = await api.post('/users', userData);
     return response.data;
 };
 
-export const updateUser = async (id: string, userData: any) => {
-    const response = await axios.put(`${API_URL}/users/${id}`, userData, getAuthHeader());
+export const updateUser = async (id: string, userData: UpdateUserData) => {
+    const response = await api.put(`/users/${id}`, userData);
     return response.data;
 };
 
 export const deleteUser = async (id: string) => {
-    const response = await axios.delete(`${API_URL}/users/${id}`, getAuthHeader());
+    const response = await api.delete(`/users/${id}`);
     return response.data;
 };

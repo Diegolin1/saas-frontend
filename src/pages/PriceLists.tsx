@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getPriceLists, createPriceList, deletePriceList, getPriceListItems, upsertProductPrice, removeProductPrice, PriceList } from '../services/priceList.service';
+import { getErrorMessage } from '../services/api';
 import { Dialog } from '@headlessui/react';
 import { PlusIcon, EyeIcon, XMarkIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { getProducts } from '../services/product.service'; // Needed to select products
@@ -100,8 +101,8 @@ export default function PriceLists() {
         try {
             await deletePriceList(list.id);
             loadLists();
-        } catch (err: any) {
-            alert(err.response?.data?.error || 'Error eliminando la lista.');
+        } catch (err: unknown) {
+            alert(getErrorMessage(err, 'Error eliminando la lista.'));
         }
     };
 
