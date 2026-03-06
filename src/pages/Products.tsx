@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getProducts, deleteProduct, Product, PaginationInfo } from '../services/product.service';
-import { PlusIcon, PencilSquareIcon, TrashIcon, StarIcon, ExclamationTriangleIcon, ShareIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, PencilSquareIcon, TrashIcon, StarIcon, ExclamationTriangleIcon, ShareIcon } from '@heroicons/react/24/outline';
 import Pagination from '../components/Pagination';
 import { useToast } from '../context/ToastContext';
 

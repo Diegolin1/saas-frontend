@@ -25,7 +25,7 @@ const statusLabels: Record<string, string> = {
 
 export default function Orders() {
     const { showToast } = useToast();
-    const [orders, setOrders] = useState<(Order & { date: string; customerName: string })[]>([]);
+    const [orders, setOrders] = useState<(Order & { date: string; customerName: string; invoiced?: boolean })[]>([]);
     const [loading, setLoading] = useState(true);
     const [updatingId, setUpdatingId] = useState<string | null>(null);
     const [page, setPage] = useState(1);

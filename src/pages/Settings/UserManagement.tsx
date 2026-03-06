@@ -29,7 +29,7 @@ const UserManagement = () => {
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [formData, setFormData] = useState({ fullName: '', email: '', password: '', role: 'SELLER' });
+    const [formData, setFormData] = useState({ fullName: '', email: '', password: '', role: 'SELLER' as 'OWNER' | 'ADMIN' | 'SUPERVISOR' | 'SELLER' | 'BUYER' });
     const [error, setError] = useState('');
     const [updatingRole, setUpdatingRole] = useState<string | null>(null);
     const [page, setPage] = useState(1);
@@ -60,7 +60,7 @@ const UserManagement = () => {
         try {
             await createUser(formData);
             setIsModalOpen(false);
-            setFormData({ fullName: '', email: '', password: '', role: 'SELLER' });
+            setFormData({ fullName: '', email: '', password: '', role: 'SELLER' as const });
             fetchUsers();
             showToast('Usuario creado correctamente', 'success');
         } catch (err: unknown) {
@@ -68,10 +68,10 @@ const UserManagement = () => {
         }
     };
 
-    const handleRoleChange = async (userId: string, newRole: string) => {
+    const handleRoleChange = async (userId: string, newRole: User['role']) => {
         setUpdatingRole(userId);
         try {
-            await updateUser(userId, { role: newRole as 'OWNER' | 'ADMIN' | 'SUPERVISOR' | 'SELLER' | 'BUYER' });
+            await updateUser(userId, { role: newRole });
             setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
             showToast('Rol actualizado correctamente', 'success');
         } catch (err: unknown) {
@@ -132,7 +132,7 @@ const UserManagement = () => {
                                     <select
                                         value={user.role}
                                         disabled={updatingRole === user.id}
-                                        onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                                        onChange={(e) => handleRoleChange(user.id, e.target.value as User['role'])}
                                         className="text-xs font-semibold rounded-full border border-gray-200 bg-gray-50 px-3 py-1 pr-7 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer disabled:opacity-50"
                                     >
                                         <option value="ADMIN">Administrador</option>

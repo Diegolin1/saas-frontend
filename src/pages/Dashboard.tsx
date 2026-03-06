@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { CurrencyDollarIcon, ShoppingCartIcon, UsersIcon, CursorArrowRaysIcon, SparklesIcon, QrCodeIcon, ArrowTopRightOnSquareIcon, RocketLaunchIcon } from '@heroicons/react/24/outline'
+import { CurrencyDollarIcon, ShoppingCartIcon, UsersIcon, SparklesIcon, QrCodeIcon, ArrowTopRightOnSquareIcon, RocketLaunchIcon } from '@heroicons/react/24/outline'
 import { getDashboardStats, getTopProducts, getLowStockProducts } from '../services/dashboard.service'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
