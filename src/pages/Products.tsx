@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { getProducts, deleteProduct, Product, PaginationInfo } from '../services/product.service';
 import { PlusIcon, PencilSquareIcon, TrashIcon, StarIcon, ExclamationTriangleIcon, ShareIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import Pagination from '../components/Pagination';
+import { useToast } from '../context/ToastContext';
 
 export default function Products() {
+    const { showToast } = useToast();
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
@@ -42,9 +44,10 @@ export default function Products() {
         if (window.confirm('¿Estás seguro de eliminar este producto?')) {
             try {
                 await deleteProduct(id);
+                showToast('Producto eliminado correctamente', 'success');
                 fetchProducts();
             } catch (error) {
-                alert('Error al eliminar producto');
+                showToast('Error al eliminar el producto', 'error');
             }
         }
     };

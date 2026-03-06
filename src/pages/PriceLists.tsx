@@ -3,9 +3,11 @@ import { getPriceLists, createPriceList, deletePriceList, getPriceListItems, ups
 import { getErrorMessage } from '../services/api';
 import { Dialog } from '@headlessui/react';
 import { PlusIcon, EyeIcon, XMarkIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { getProducts } from '../services/product.service'; // Needed to select products
+import { getProducts } from '../services/product.service';
+import { useToast } from '../context/ToastContext';
 
 export default function PriceLists() {
+    const { showToast } = useToast();
     const [lists, setLists] = useState<PriceList[]>([]);
     const [loading, setLoading] = useState(true);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -33,7 +35,7 @@ export default function PriceLists() {
         if (products.length === 0) {
             try {
                 const data = await getProducts();
-                setProducts(data);
+                setProducts(data.products ?? []);
             } catch (e) { console.error(e); }
         }
     }
@@ -49,20 +51,21 @@ export default function PriceLists() {
             setIsCreateModalOpen(false);
             setNewListData({ name: '', currency: 'MXN' });
             loadLists();
+            showToast('Lista de precios creada correctamente', 'success');
         } catch (error) {
-            alert('Error creating list');
+            showToast(getErrorMessage(error, 'Error al crear la lista'), 'error');
         }
     };
 
     const openItemsModal = async (list: PriceList) => {
         setCurrentList(list);
         setIsItemsModalOpen(true);
-        loadProducts(); // Load all products for the dropdown
+        loadProducts();
         try {
             const items = await getPriceListItems(list.id);
             setListItems(items);
         } catch (error) {
-            alert('Error loading items');
+            showToast('Error al cargar los precios', 'error');
         }
     };
 
@@ -72,12 +75,12 @@ export default function PriceLists() {
 
         try {
             await upsertProductPrice(currentList.id, newItemData.productId, parseFloat(newItemData.price));
-            // Refresh items
             const items = await getPriceListItems(currentList.id);
             setListItems(items);
             setNewItemData({ productId: '', price: '' });
+            showToast('Precio actualizado correctamente', 'success');
         } catch (error) {
-            alert('Error updating price');
+            showToast(getErrorMessage(error, 'Error al actualizar el precio'), 'error');
         }
     };
 
@@ -87,22 +90,24 @@ export default function PriceLists() {
             await removeProductPrice(currentList.id, productId);
             const items = await getPriceListItems(currentList.id);
             setListItems(items);
+            showToast('Precio eliminado', 'success');
         } catch (error) {
-            alert('Error removing price');
+            showToast(getErrorMessage(error, 'Error al eliminar el precio'), 'error');
         }
     };
 
     const handleDeleteList = async (list: PriceList) => {
         if (list.isDefault) {
-            alert('No se puede eliminar la lista predeterminada.');
+            showToast('No se puede eliminar la lista predeterminada.', 'warning');
             return;
         }
         if (!window.confirm(`¿Eliminar la lista "${list.name}" y todos sus precios?`)) return;
         try {
             await deletePriceList(list.id);
             loadLists();
+            showToast('Lista eliminada correctamente', 'success');
         } catch (err: unknown) {
-            alert(getErrorMessage(err, 'Error eliminando la lista.'));
+            showToast(getErrorMessage(err, 'Error al eliminar la lista.'), 'error');
         }
     };
 

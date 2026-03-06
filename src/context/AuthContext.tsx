@@ -9,6 +9,15 @@ interface User {
     companyId: string;
 }
 
+interface JwtPayload {
+    id: string;
+    email: string;
+    role: string;
+    companyId: string;
+    exp: number;
+    iat?: number;
+}
+
 interface AuthContextType {
     user: User | null;
     token: string | null;
@@ -40,7 +49,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     useEffect(() => {
         if (token) {
             try {
-                const decoded = jwtDecode<{ exp: number }>(token);
+                const decoded = jwtDecode<JwtPayload>(token);
                 if (decoded.exp * 1000 < Date.now()) {
                     logout();
                 } else {

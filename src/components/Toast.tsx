@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import type { FC } from 'react';
 import { CheckCircleIcon, XCircleIcon, InformationCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 
 interface ToastProps {
@@ -8,7 +9,7 @@ interface ToastProps {
     duration?: number;
 }
 
-export const Toast: React.FC<ToastProps> = ({ message, type = 'info', onClose, duration = 3000 }) => {
+export const Toast: FC<ToastProps> = ({ message, type = 'info', onClose, duration = 3000 }) => {
     useEffect(() => {
         if (duration > 0) {
             const timer = setTimeout(() => {
@@ -33,7 +34,7 @@ export const Toast: React.FC<ToastProps> = ({ message, type = 'info', onClose, d
     };
 
     return (
-        <div className={`fixed top-6 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-4 rounded-xl shadow-glow border-2 ${bgColors[type]} animate-fade-in`}>
+        <div className={`flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-lg border-2 ${bgColors[type]} animate-fade-in w-full`}>
             {icons[type]}
             <span className="font-bold text-brand-900">{message}</span>
             <button

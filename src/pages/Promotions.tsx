@@ -3,8 +3,10 @@ import { getPromotions, createPromotion, updatePromotion, deletePromotion, Promo
 import { getErrorMessage } from '../services/api';
 import { Dialog } from '@headlessui/react';
 import { PlusIcon, TrashIcon, XMarkIcon, GiftIcon } from '@heroicons/react/24/outline';
+import { useToast } from '../context/ToastContext';
 
 export default function Promotions() {
+    const { showToast } = useToast();
     const [promotions, setPromotions] = useState<Promotion[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -37,6 +39,7 @@ export default function Promotions() {
             setIsModalOpen(false);
             setFormData({ code: '', discount: '', type: 'PERCENTAGE', expiresAt: '' });
             loadData();
+            showToast('Promoción creada correctamente', 'success');
         } catch (err: unknown) {
             setError(getErrorMessage(err, 'Error al crear la promoción'));
         }
@@ -46,8 +49,9 @@ export default function Promotions() {
         try {
             await updatePromotion(promo.id, { isActive: !promo.isActive });
             setPromotions(prev => prev.map(p => p.id === promo.id ? { ...p, isActive: !p.isActive } : p));
+            showToast(promo.isActive ? 'Promoción desactivada' : 'Promoción activada', 'success');
         } catch (err: unknown) {
-            alert(getErrorMessage(err, 'Error al actualizar'));
+            showToast(getErrorMessage(err, 'Error al actualizar'), 'error');
         }
     };
 
@@ -56,8 +60,9 @@ export default function Promotions() {
         try {
             await deletePromotion(id);
             loadData();
+            showToast('Promoción eliminada', 'success');
         } catch (err: unknown) {
-            alert(getErrorMessage(err, 'Error al eliminar'));
+            showToast(getErrorMessage(err, 'Error al eliminar'), 'error');
         }
     };
 

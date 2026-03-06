@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer, Customer, PaginationInfo } from '../services/customer.service';
 import { getPriceLists, PriceList } from '../services/priceList.service';
-import { getUsers, User } from '../services/user.service'; // Import user service
+import { getUsers, User } from '../services/user.service';
 import { Dialog } from '@headlessui/react';
-import { PlusIcon, PencilSquareIcon, TrashIcon, XMarkIcon, UserIcon } from '@heroicons/react/24/outline'; // Added UserIcon
+import { PlusIcon, PencilSquareIcon, TrashIcon, XMarkIcon, UserIcon } from '@heroicons/react/24/outline';
 import Pagination from '../components/Pagination';
+import { useToast } from '../context/ToastContext';
+import { getErrorMessage } from '../services/api';
 
 export default function Customers() {
+    const { showToast } = useToast();
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [priceLists, setPriceLists] = useState<PriceList[]>([]);
     const [users, setUsers] = useState<User[]>([]); // State for users
@@ -88,13 +91,15 @@ export default function Customers() {
         try {
             if (currentCustomer?.id) {
                 await updateCustomer(currentCustomer.id, formData);
+                showToast('Cliente actualizado correctamente', 'success');
             } else {
                 await createCustomer(formData);
+                showToast('Cliente creado correctamente', 'success');
             }
             setIsModalOpen(false);
             loadData();
         } catch (error) {
-            alert('Error al guardar el cliente');
+            showToast(getErrorMessage(error, 'Error al guardar el cliente'), 'error');
         }
     };
 
@@ -102,9 +107,10 @@ export default function Customers() {
         if (confirm('¿Estás seguro de eliminar este cliente?')) {
             try {
                 await deleteCustomer(id);
+                showToast('Cliente eliminado correctamente', 'success');
                 loadData();
             } catch (error) {
-                alert('Error al eliminar el cliente');
+                showToast('Error al eliminar el cliente', 'error');
             }
         }
     };

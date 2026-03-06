@@ -3,6 +3,7 @@ import { DocumentTextIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import { getOrders, updateOrderStatus, PaginationInfo, Order } from '../services/order.service';
 import { useAuth } from '../context/AuthContext';
 import Pagination from '../components/Pagination';
+import { useToast } from '../context/ToastContext';
 
 const ORDER_STATUSES = ['PENDING', 'PRODUCTION', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
 
@@ -23,6 +24,7 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function Orders() {
+    const { showToast } = useToast();
     const [orders, setOrders] = useState<(Order & { date: string; customerName: string })[]>([]);
     const [loading, setLoading] = useState(true);
     const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -62,15 +64,16 @@ export default function Orders() {
         try {
             await updateOrderStatus(orderId, newStatus);
             setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+            showToast('Estado actualizado correctamente', 'success');
         } catch (error) {
-            alert('Error al actualizar el estado del pedido');
+            showToast('Error al actualizar el estado del pedido', 'error');
         } finally {
             setUpdatingId(null);
         }
     };
 
     const handleInvoice = (orderId: string) => {
-        alert(`Generando factura para Orden #${orderId} vía Facturapi...`);
+        showToast(`Funcionalidad de facturación próximamente disponible`, 'info');
         setOrders(prev => prev.map(o => o.id === orderId ? { ...o, invoiced: true } : o));
     };
 

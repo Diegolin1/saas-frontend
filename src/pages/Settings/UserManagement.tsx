@@ -5,6 +5,7 @@ import { Dialog } from '@headlessui/react';
 import { XMarkIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../../context/AuthContext';
 import Pagination from '../../components/Pagination';
+import { useToast } from '../../context/ToastContext';
 
 const ROLE_LABELS: Record<string, string> = {
     OWNER: 'Propietario',
@@ -24,6 +25,7 @@ const ROLE_COLORS: Record<string, string> = {
 
 const UserManagement = () => {
     const { user: currentUser } = useAuth();
+    const { showToast } = useToast();
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -60,6 +62,7 @@ const UserManagement = () => {
             setIsModalOpen(false);
             setFormData({ fullName: '', email: '', password: '', role: 'SELLER' });
             fetchUsers();
+            showToast('Usuario creado correctamente', 'success');
         } catch (err: unknown) {
             setError(getErrorMessage(err, 'Error al crear el usuario.'));
         }
@@ -70,8 +73,9 @@ const UserManagement = () => {
         try {
             await updateUser(userId, { role: newRole as 'OWNER' | 'ADMIN' | 'SUPERVISOR' | 'SELLER' | 'BUYER' });
             setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
+            showToast('Rol actualizado correctamente', 'success');
         } catch (err: unknown) {
-            alert(getErrorMessage(err, 'Error al cambiar el rol.'));
+            showToast(getErrorMessage(err, 'Error al cambiar el rol.'), 'error');
         } finally {
             setUpdatingRole(null);
         }
@@ -82,8 +86,9 @@ const UserManagement = () => {
             try {
                 await deleteUser(id);
                 fetchUsers();
+                showToast('Usuario eliminado correctamente', 'success');
             } catch (err: unknown) {
-                alert(getErrorMessage(err, 'Error al eliminar el usuario.'));
+                showToast(getErrorMessage(err, 'Error al eliminar el usuario.'), 'error');
             }
         }
     };

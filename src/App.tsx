@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom'
 import { CartProvider } from './context/CartContext'
+import { ToastProvider } from './context/ToastContext'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import Layout from './components/Layout'
 import PublicLayout from './components/PublicLayout'
 import Dashboard from './pages/Dashboard'
@@ -39,16 +41,18 @@ function App() {
     return (
         <AuthProvider>
             <CartProvider>
+                <ToastProvider>
                 <BrowserRouter>
+                    <ErrorBoundary>
                     <Routes>
                         <Route path="/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
 
                         {/* PUBLIC ROUTES (Showroom) */}
                         <Route element={<PublicLayout />}>
-                            <Route path="/" element={<Catalog />} />
-                            <Route path="/product/:id" element={<ProductDetail />} />
-                            <Route path="/cart" element={<Cart />} />
+                            <Route path="/" element={<ErrorBoundary><Catalog /></ErrorBoundary>} />
+                            <Route path="/product/:id" element={<ErrorBoundary><ProductDetail /></ErrorBoundary>} />
+                            <Route path="/cart" element={<ErrorBoundary><Cart /></ErrorBoundary>} />
                         </Route>
 
                         {/* PROTECTED ADMIN / BUYER ROUTES */}
@@ -56,27 +60,27 @@ function App() {
                             <Route path="/admin" element={<Layout />}>
 
                                 {/* Common / Redirect Dashboard */}
-                                <Route index element={<Dashboard />} />
+                                <Route index element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
 
                                 {/* Admin / Seller Routes */}
                                 <Route element={<ProtectedRoute allowedRoles={['OWNER', 'ADMIN', 'SUPERVISOR', 'SELLER']} />}>
-                                    <Route path="customers" element={<Customers />} />
-                                    <Route path="leads" element={<LeadsCRM />} />
-                                    <Route path="orders" element={<Orders />} />
+                                    <Route path="customers" element={<ErrorBoundary><Customers /></ErrorBoundary>} />
+                                    <Route path="leads" element={<ErrorBoundary><LeadsCRM /></ErrorBoundary>} />
+                                    <Route path="orders" element={<ErrorBoundary><Orders /></ErrorBoundary>} />
                                 </Route>
 
                                 <Route element={<ProtectedRoute allowedRoles={['OWNER', 'ADMIN', 'SUPERVISOR']} />}>
-                                    <Route path="price-lists" element={<PriceLists />} />
-                                    <Route path="products" element={<Products />} />
-                                    <Route path="products/new" element={<ProductForm />} />
-                                    <Route path="products/:id/edit" element={<ProductForm />} />
-                                    <Route path="promotions" element={<Promotions />} />
-                                    <Route path="settings" element={<SettingsLayout />} />
+                                    <Route path="price-lists" element={<ErrorBoundary><PriceLists /></ErrorBoundary>} />
+                                    <Route path="products" element={<ErrorBoundary><Products /></ErrorBoundary>} />
+                                    <Route path="products/new" element={<ErrorBoundary><ProductForm /></ErrorBoundary>} />
+                                    <Route path="products/:id/edit" element={<ErrorBoundary><ProductForm /></ErrorBoundary>} />
+                                    <Route path="promotions" element={<ErrorBoundary><Promotions /></ErrorBoundary>} />
+                                    <Route path="settings" element={<ErrorBoundary><SettingsLayout /></ErrorBoundary>} />
                                 </Route>
 
                                 {/* Buyer Routes if they log in to see specific history */}
                                 <Route element={<ProtectedRoute allowedRoles={['BUYER']} />}>
-                                    <Route path="my-orders" element={<Orders />} />
+                                    <Route path="my-orders" element={<ErrorBoundary><Orders /></ErrorBoundary>} />
                                 </Route>
 
                             </Route>
@@ -88,7 +92,9 @@ function App() {
                         {/* 404 catch-all */}
                         <Route path="*" element={<NotFound />} />
                     </Routes>
+                    </ErrorBoundary>
                 </BrowserRouter>
+                </ToastProvider>
             </CartProvider>
         </AuthProvider>
     )
