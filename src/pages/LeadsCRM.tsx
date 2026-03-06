@@ -95,10 +95,6 @@ export default function LeadsCRM() {
         window.open(`https://wa.me/${phoneWithCode}?text=${encodeURIComponent(vendorMsg)}`, '_blank');
     };
 
-    // Status counts for filter pills
-    const statusCounts: Record<string, number> = {};
-    leads.forEach(l => { statusCounts[l.status] = (statusCounts[l.status] || 0) + 1; });
-
     if (loading && leads.length === 0) return (
         <div className="flex items-center justify-center min-h-[60vh]">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500"></div>
