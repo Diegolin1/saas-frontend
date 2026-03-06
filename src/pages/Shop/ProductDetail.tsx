@@ -45,35 +45,26 @@ export default function ProductDetail() {
             // Si hay token, intenta endpoint privado primero
             if (token) {
                 try {
-                    console.log(`[ProductDetail] Usuario autenticado, intentando endpoint privado`)
                     const data = await getProduct(id)
                     hydrateProduct(data)
                     setLoading(false)
                     return
-                } catch (error) {
-                    console.log(`[ProductDetail] Endpoint privado falló, fallback a catálogo público`)
+                } catch {
+                    // Endpoint privado falló, fallback a catálogo público
                 }
             }
 
             // Sin token o endpoint privado falló -> usar catálogo público
             try {
-                console.log(`[ProductDetail] Usando catálogo público con companyId: ${companyId}`)
-                console.log(`[ProductDetail] API URL: ${apiUrl}/products/public/${companyId}`)
-
                 const response = await getPublicCatalog(companyId)
                 // Support both new paginated format and legacy array format
                 const catalog: Product[] = response.products ? response.products : (Array.isArray(response) ? response : [])
-                console.log(`[ProductDetail] Catálogo cargado: ${catalog.length} productos`)
-                console.log('[ProductDetail] IDs en catálogo:', catalog.map((p: Product) => p.id))
-                console.log('[ProductDetail] Buscando producto con ID:', id)
 
                 const found = catalog.find((p: Product) => p.id === id)
                 if (found) {
-                    console.log('[ProductDetail] ✓ Producto encontrado en catálogo público')
                     hydrateProduct(found)
                 } else {
-                    console.error(`[ProductDetail] ✗ Producto ${id} no encontrado en catálogo de companyId ${companyId}`)
-                    setFeedback({ message: `Producto no encontrado en el catálogo. CompanyId: ${companyId}`, type: 'error' })
+                    setFeedback({ message: `Producto no encontrado en el catálogo.`, type: 'error' })
                 }
             } catch (err: unknown) {
                 console.error('[ProductDetail] Error cargando catálogo público:', err)

@@ -1,39 +1,29 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+        setLoading(true);
 
         try {
-            // Getting API URL: Use relative path in production, localhost in dev
-            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-
-            const response = await fetch(`${API_URL}/auth/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Login failed');
-            }
-
+            const { data } = await api.post('/auth/login', { email, password });
             login(data.token, data.user);
-            // Redirect to admin dashboard
             navigate('/admin');
-        } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : 'Error al iniciar sesión.');
+        } catch (err: any) {
+            setError(err.response?.data?.error || err.message || 'Error al iniciar sesión.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -99,9 +89,10 @@ const Login = () => {
                         <div>
                             <button
                                 type="submit"
-                                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                disabled={loading}
+                                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                Iniciar Sesión
+                                {loading ? 'Ingresando...' : 'Iniciar Sesión'}
                             </button>
                         </div>
                     </form>

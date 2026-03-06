@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
 
 const Register = () => {
     const [formData, setFormData] = useState({
@@ -11,6 +12,7 @@ const Register = () => {
         confirmPassword: ''
     });
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
 
@@ -23,35 +25,28 @@ const Register = () => {
         setError('');
 
         if (formData.password !== formData.confirmPassword) {
-            setError('Passwords do not match');
+            setError('Las contraseñas no coinciden.');
+            return;
+        }
+        if (formData.password.length < 8) {
+            setError('La contraseña debe tener al menos 8 caracteres.');
             return;
         }
 
+        setLoading(true);
         try {
-            // Getting API URL: Use relative path in production, localhost in dev
-            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-
-            const response = await fetch(`${API_URL}/auth/register`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    companyName: formData.companyName,
-                    adminName: formData.adminName,
-                    email: formData.email,
-                    password: formData.password
-                }),
+            const { data } = await api.post('/auth/register', {
+                companyName: formData.companyName,
+                adminName: formData.adminName,
+                email: formData.email,
+                password: formData.password
             });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Registration failed');
-            }
-
             login(data.token, data.user);
             navigate('/admin');
-        } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : 'Error al registrar.');
+        } catch (err: any) {
+            setError(err.response?.data?.error || err.message || 'Error al registrar.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -100,9 +95,9 @@ const Register = () => {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-300">Contraseña <span className="text-gray-500">(mín. 6 caracteres)</span></label>
+                            <label className="block text-sm font-medium text-gray-300">Contraseña <span className="text-gray-500">(mín. 8 caracteres)</span></label>
                             <div className="mt-1">
-                                <input name="password" type="password" required minLength={6} value={formData.password} onChange={handleChange} className="appearance-none block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-gray-700 text-white" />
+                                <input name="password" type="password" required minLength={8} value={formData.password} onChange={handleChange} className="appearance-none block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-gray-700 text-white" />
                             </div>
                         </div>
 
@@ -114,8 +109,8 @@ const Register = () => {
                         </div>
 
                         <div>
-                            <button type="submit" className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                Crear Cuenta
+                            <button type="submit" disabled={loading} className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                                {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
                             </button>
                         </div>
                     </form>

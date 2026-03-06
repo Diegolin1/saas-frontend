@@ -64,7 +64,7 @@ export default function Products() {
                     </div>
                     <div className="mt-6 sm:mt-0">
                         <Link
-                            to="/products/new"
+                            to="/admin/products/new"
                             className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-gold-500 to-gold-400 px-8 py-3 text-base font-bold text-brand-950 shadow-glow hover:shadow-glass-dark transition-all hover:scale-105 duration-300 animate-pulse"
                         >
                             <PlusIcon className="h-5 w-5" />

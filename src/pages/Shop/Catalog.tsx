@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { getPublicCatalog, Product } from '../../services/product.service'
-import { SparklesIcon, FireIcon, MagnifyingGlassIcon, FunnelIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
+import { SparklesIcon, MagnifyingGlassIcon, FunnelIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import { useCart } from '../../context/CartContext'
 import B2BRevealModal from '../../components/B2BRevealModal'
 
@@ -155,23 +155,12 @@ export default function Catalog() {
                 ) : null}
                 {products.length > 0 && (
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                        {products.map((product, index) => (
+                        {products.map((product) => (
                             <div
                                 key={product.id}
                                 className="group relative flex flex-col rounded-3xl overflow-hidden bg-stone-900/60 backdrop-blur-xl border border-amber-500/20 shadow-2xl hover:shadow-amber-900/50 hover:-translate-y-2 transition-all duration-300"
                             >
-                                {/* Badges */}
-                                <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
-                                    {index % 3 === 0 && (
-                                        <span className="inline-flex items-center rounded-full bg-gradient-to-r from-amber-500 to-amber-600 px-3 py-1 text-xs font-bold text-white shadow-lg">
-                                            <FireIcon className="mr-1 h-3.5 w-3.5" /> Más Vendido
-                                        </span>
-                                    )}
-                                    {index % 4 === 0 && (
-                                        <span className="inline-flex items-center rounded-full bg-white/20 px-3 py-1 text-xs font-semibold text-white ring-2 ring-white/30 backdrop-blur-sm shadow-lg">
-                                            ¡Pocas Tallas!                                        </span>
-                                    )}
-                                </div>
+                                {/* Badges removed — only show real data-driven badges */}
 
                                 <div className="relative h-64 w-full overflow-hidden bg-stone-950 flex items-center justify-center">
                                     {product.images && product.images.length > 0 ? (

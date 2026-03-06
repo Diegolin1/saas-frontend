@@ -157,9 +157,9 @@ export default function Dashboard() {
                                 </Link>
                             </Tooltip>
                             <Tooltip content="Mira un tutorial rápido para dominar tu showroom.">
-                                <a href="https://youtu.be/dQw4w9WgXcQ" target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto px-8 py-4 glass hover:bg-white/10 text-gold-400 font-semibold rounded-xl border border-gold-500/30 transition-all backdrop-blur-md flex items-center justify-center gap-2 hover:scale-105 focus:outline-none">
+                                <a href="#" onClick={(e) => e.preventDefault()} className="w-full sm:w-auto px-8 py-4 glass hover:bg-white/10 text-gold-400 font-semibold rounded-xl border border-gold-500/30 transition-all backdrop-blur-md flex items-center justify-center gap-2 hover:scale-105 focus:outline-none">
                                     <SparklesIcon className="w-5 h-5" />
-                                    Ver Tutorial Rápido
+                                    Tutorial (Próximamente)
                                 </a>
                             </Tooltip>
                         </div>
