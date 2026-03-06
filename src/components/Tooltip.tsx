@@ -20,7 +20,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ children, content, position = 
       {children}
       {visible && (
         <span
-          className={`absolute z-50 px-3 py-2 rounded-xl shadow-glass bg-brand-900 text-gold-400 text-xs font-semibold whitespace-nowrap transition-all duration-200
+          className={`absolute z-50 px-3 py-2 rounded-lg shadow-lg bg-slate-900 text-white text-xs font-medium whitespace-nowrap transition-all duration-200
             ${position === 'top' ? 'bottom-full left-1/2 -translate-x-1/2 mb-2' : ''}
             ${position === 'bottom' ? 'top-full left-1/2 -translate-x-1/2 mt-2' : ''}
             ${position === 'left' ? 'right-full top-1/2 -translate-y-1/2 mr-2' : ''}

@@ -1,0 +1,283 @@
+import { useState, useEffect } from 'react';
+import { getSettings, updateSettings, CompanySettings } from '../../services/settings.service';
+import { getErrorMessage } from '../../services/api';
+import { useToast } from '../../context/ToastContext';
+import { BuildingOffice2Icon, PhoneIcon, MapPinIcon, TagIcon } from '@heroicons/react/24/outline';
+
+const MEXICAN_STATES = [
+    'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas',
+    'Chihuahua', 'Ciudad de México', 'Coahuila', 'Colima', 'Durango', 'Estado de México',
+    'Guanajuato', 'Guerrero', 'Hidalgo', 'Jalisco', 'Michoacán', 'Morelos', 'Nayarit',
+    'Nuevo León', 'Oaxaca', 'Puebla', 'Querétaro', 'Quintana Roo', 'San Luis Potosí',
+    'Sinaloa', 'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala', 'Veracruz', 'Yucatán', 'Zacatecas'
+];
+
+export default function CompanySettingsPage() {
+    const { showToast } = useToast();
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+
+    const [companyName, setCompanyName] = useState('');
+    const [taxId, setTaxId] = useState('');
+    const [whatsappPhone, setWhatsappPhone] = useState('');
+    const [city, setCity] = useState('');
+    const [state, setState] = useState('');
+    const [currency, setCurrency] = useState('MXN');
+    const [categoriesText, setCategoriesText] = useState('');
+
+    // Address fields
+    const [street, setStreet] = useState('');
+    const [extNumber, setExtNumber] = useState('');
+    const [intNumber, setIntNumber] = useState('');
+    const [neighborhood, setNeighborhood] = useState('');
+    const [zipCode, setZipCode] = useState('');
+
+    useEffect(() => {
+        loadSettings();
+    }, []);
+
+    const loadSettings = async () => {
+        try {
+            const data: CompanySettings = await getSettings();
+            setCompanyName(data.name || '');
+            setTaxId(data.taxId || '');
+
+            const s = data.settings || {};
+            setWhatsappPhone(s.whatsappPhone || '');
+            setCity(s.city || '');
+            setState(s.state || '');
+            setCurrency(s.currency || 'MXN');
+            setCategoriesText((s.categories || []).join(', '));
+
+            const addr = data.address || {};
+            setStreet(addr.street || '');
+            setExtNumber(addr.extNumber || '');
+            setIntNumber(addr.intNumber || '');
+            setNeighborhood(addr.neighborhood || '');
+            setZipCode(addr.zipCode || '');
+        } catch (err) {
+            showToast(getErrorMessage(err, 'Error al cargar configuración.'), 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSaving(true);
+
+        try {
+            const categories = categoriesText
+                .split(',')
+                .map(c => c.trim())
+                .filter(Boolean);
+
+            await updateSettings({
+                name: companyName.trim(),
+                taxId: taxId.trim() || null,
+                address: {
+                    street: street.trim(),
+                    extNumber: extNumber.trim(),
+                    intNumber: intNumber.trim(),
+                    neighborhood: neighborhood.trim(),
+                    zipCode: zipCode.trim(),
+                    city: city.trim(),
+                    state,
+                },
+                settings: {
+                    whatsappPhone: whatsappPhone.trim(),
+                    city: city.trim(),
+                    state,
+                    currency,
+                    categories,
+                },
+            });
+
+            showToast('Configuración guardada correctamente.', 'success');
+        } catch (err) {
+            showToast(getErrorMessage(err, 'Error al guardar la configuración.'), 'error');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="bg-white shadow rounded-lg p-8 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-brand-500"></div>
+            </div>
+        );
+    }
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Company Info */}
+            <div className="bg-white shadow rounded-lg">
+                <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
+                    <div className="flex items-center gap-3">
+                        <BuildingOffice2Icon className="h-5 w-5 text-brand-500" />
+                        <h3 className="text-base font-semibold text-gray-900">Datos de la Empresa</h3>
+                    </div>
+                    <p className="mt-1 text-sm text-gray-500">Información general de tu negocio.</p>
+                </div>
+                <div className="px-4 py-5 sm:p-6 space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Nombre de la Empresa *</label>
+                            <input
+                                type="text"
+                                required
+                                value={companyName}
+                                onChange={e => setCompanyName(e.target.value)}
+                                className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border p-2.5"
+                                placeholder="Mi Empresa S.A. de C.V."
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">RFC</label>
+                            <input
+                                type="text"
+                                value={taxId}
+                                onChange={e => setTaxId(e.target.value.toUpperCase())}
+                                maxLength={13}
+                                className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border p-2.5 uppercase"
+                                placeholder="XAXX010101000"
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Moneda</label>
+                        <select
+                            value={currency}
+                            onChange={e => setCurrency(e.target.value)}
+                            className="mt-1 block w-full sm:w-48 rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border p-2.5"
+                        >
+                            <option value="MXN">MXN — Peso Mexicano</option>
+                            <option value="USD">USD — Dólar</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            {/* Contact */}
+            <div className="bg-white shadow rounded-lg">
+                <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
+                    <div className="flex items-center gap-3">
+                        <PhoneIcon className="h-5 w-5 text-brand-500" />
+                        <h3 className="text-base font-semibold text-gray-900">Contacto y WhatsApp</h3>
+                    </div>
+                    <p className="mt-1 text-sm text-gray-500">Número de WhatsApp para pedidos de clientes.</p>
+                </div>
+                <div className="px-4 py-5 sm:p-6">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">WhatsApp para Pedidos</label>
+                        <input
+                            type="tel"
+                            value={whatsappPhone}
+                            onChange={e => setWhatsappPhone(e.target.value)}
+                            className="mt-1 block w-full sm:w-80 rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border p-2.5"
+                            placeholder="521 477 123 4567"
+                        />
+                        <p className="mt-1 text-xs text-gray-400">Formato: código de país + número (ej. 5214771234567)</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Address */}
+            <div className="bg-white shadow rounded-lg">
+                <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
+                    <div className="flex items-center gap-3">
+                        <MapPinIcon className="h-5 w-5 text-brand-500" />
+                        <h3 className="text-base font-semibold text-gray-900">Dirección</h3>
+                    </div>
+                </div>
+                <div className="px-4 py-5 sm:p-6 space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="sm:col-span-2">
+                            <label className="block text-sm font-medium text-gray-700">Calle</label>
+                            <input type="text" value={street} onChange={e => setStreet(e.target.value)}
+                                className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border p-2.5" placeholder="Av. Principal" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Num. Ext.</label>
+                                <input type="text" value={extNumber} onChange={e => setExtNumber(e.target.value)}
+                                    className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border p-2.5" placeholder="123" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Num. Int.</label>
+                                <input type="text" value={intNumber} onChange={e => setIntNumber(e.target.value)}
+                                    className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border p-2.5" placeholder="A" />
+                            </div>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Colonia</label>
+                            <input type="text" value={neighborhood} onChange={e => setNeighborhood(e.target.value)}
+                                className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border p-2.5" placeholder="Centro" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">C.P.</label>
+                            <input type="text" value={zipCode} onChange={e => setZipCode(e.target.value)} maxLength={5}
+                                className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border p-2.5" placeholder="37000" />
+                        </div>
+                        <div>
+                            {/* city will be duplicated from settings for convenience */}
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Ciudad / Municipio</label>
+                            <input type="text" value={city} onChange={e => setCity(e.target.value)}
+                                className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border p-2.5" placeholder="León" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Estado</label>
+                            <select value={state} onChange={e => setState(e.target.value)}
+                                className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border p-2.5">
+                                <option value="">Seleccionar...</option>
+                                {MEXICAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Categories */}
+            <div className="bg-white shadow rounded-lg">
+                <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
+                    <div className="flex items-center gap-3">
+                        <TagIcon className="h-5 w-5 text-brand-500" />
+                        <h3 className="text-base font-semibold text-gray-900">Categorías de Productos</h3>
+                    </div>
+                    <p className="mt-1 text-sm text-gray-500">Las categorías disponibles para clasificar tus productos.</p>
+                </div>
+                <div className="px-4 py-5 sm:p-6">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Categorías (separadas por coma)</label>
+                        <input
+                            type="text"
+                            value={categoriesText}
+                            onChange={e => setCategoriesText(e.target.value)}
+                            className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border p-2.5"
+                            placeholder="Calzado, Accesorios, Bolsos, Cinturones"
+                        />
+                        <p className="mt-1 text-xs text-gray-400">Ej: Calzado Dama, Calzado Caballero, Bolsos, Accesorios</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Submit */}
+            <div className="flex justify-end">
+                <button
+                    type="submit"
+                    disabled={saving}
+                    className="inline-flex justify-center rounded-lg bg-brand-500 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 disabled:opacity-50 transition-colors"
+                >
+                    {saving ? 'Guardando...' : 'Guardar Configuración'}
+                </button>
+            </div>
+        </form>
+    );
+}

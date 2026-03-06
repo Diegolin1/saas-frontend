@@ -1,14 +1,14 @@
 import { useState } from 'react';
-import { UsersIcon } from '@heroicons/react/24/outline';
+import { BuildingOffice2Icon, UsersIcon } from '@heroicons/react/24/outline';
 import UserManagement from './UserManagement';
+import CompanySettings from './CompanySettings';
 
 const SettingsLayout = () => {
-    const [activeTab, setActiveTab] = useState('users');
+    const [activeTab, setActiveTab] = useState('general');
 
     const tabs = [
-        // { name: 'General', id: 'general', icon: UserCircleIcon, current: false }, // Future
-        { name: 'Usuarios', id: 'users', icon: UsersIcon, current: true },
-        // { name: 'Facturación', id: 'billing', icon: CreditCardIcon, current: false }, // Future
+        { name: 'Empresa', id: 'general', icon: BuildingOffice2Icon },
+        { name: 'Usuarios', id: 'users', icon: UsersIcon },
     ];
 
     return (
@@ -40,9 +40,8 @@ const SettingsLayout = () => {
             </aside>
 
             <div className="space-y-6 sm:px-6 lg:col-span-9 lg:px-0">
+                {activeTab === 'general' && <CompanySettings />}
                 {activeTab === 'users' && <UserManagement />}
-                {activeTab === 'general' && <div className="bg-white shadow rounded-lg p-6">General Settings Placeholder</div>}
-                {activeTab === 'billing' && <div className="bg-white shadow rounded-lg p-6">Billing Settings Placeholder</div>}
             </div>
         </div>
     );

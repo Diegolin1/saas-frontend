@@ -37,7 +37,7 @@ export default function LeadsCRM() {
             pairs = activeCart.items.reduce((sum, item) => sum + item.quantity, 0);
         }
 
-        const vendorMsg = `Hola ${lead.name || ''}, soy de LeónB2B. Vi que apartaste ${pairs} pares con un valor de $${total.toLocaleString()} en nuestro catálogo pero no completaste tu pedido. ¿Tuviste alguna duda con los modelos?`;
+        const vendorMsg = `Hola ${lead.name || ''}, vi que apartaste ${pairs} pares con un valor de $${total.toLocaleString()} en nuestro catálogo pero no completaste tu pedido. ¿Tuviste alguna duda con los modelos?`;
 
         const encodedText = encodeURIComponent(vendorMsg);
         // Ensure phone number has country code if not present (simplified for Mexico)

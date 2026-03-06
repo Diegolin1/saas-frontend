@@ -169,40 +169,40 @@ const ProductForm = () => {
                 />
             )}
 
-            <h1 className="text-3xl font-display font-bold mb-6 text-brand-900 drop-shadow-glow">
+            <h1 className="text-2xl font-display font-bold mb-6 text-slate-900">
                 {isEdit ? 'Editar Producto' : 'Nuevo Producto'}
             </h1>
 
-            <form onSubmit={handleSubmit} className="space-y-8 divide-y divide-gold-400 glass p-8 shadow-glass-dark rounded-3xl border border-gold-500/20">
+            <form onSubmit={handleSubmit} className="space-y-8 divide-y divide-slate-200 bg-white p-6 sm:p-8 shadow-sm rounded-2xl border border-slate-200">
                 <div className="space-y-6">
                     <div>
-                        <h3 className="text-xl font-display font-bold leading-6 text-gold-500">Información General</h3>
-                        <p className="mt-1 text-sm text-brand-400">Detalles básicos del producto visible para los clientes.</p>
+                        <h3 className="text-lg font-display font-bold leading-6 text-slate-900">Información General</h3>
+                        <p className="mt-1 text-sm text-slate-500">Detalles básicos del producto visible para los clientes.</p>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                    <div className="grid grid-cols-1 gap-y-5 gap-x-4 sm:grid-cols-6">
                         <div className="sm:col-span-4">
-                            <label className="block text-sm font-medium text-brand-900">Nombre del Producto</label>
+                            <label className="block text-sm font-medium text-slate-700">Nombre del Producto</label>
                             <input type="text" name="name" required value={formData.name} onChange={handleChange}
-                                className="mt-1 block w-full rounded-xl border-gold-400 shadow-glow focus:border-gold-500 focus:ring-gold-400 sm:text-base border p-3 bg-white/70" />
+                                className="mt-1 block w-full rounded-lg border-slate-200 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border p-2.5" />
                         </div>
 
                         <div className="sm:col-span-2">
-                            <label className="block text-sm font-medium text-brand-900">SKU</label>
+                            <label className="block text-sm font-medium text-slate-700">SKU</label>
                             <input type="text" name="sku" required value={formData.sku} onChange={handleChange}
-                                className="mt-1 block w-full rounded-xl border-gold-400 shadow-glow focus:border-gold-500 focus:ring-gold-400 sm:text-base border p-3 bg-white/70" />
+                                className="mt-1 block w-full rounded-lg border-slate-200 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border p-2.5" />
                         </div>
 
                         <div className="sm:col-span-6">
-                            <label className="block text-sm font-medium text-brand-900">Descripción</label>
+                            <label className="block text-sm font-medium text-slate-700">Descripción</label>
                             <textarea name="description" rows={3} value={formData.description} onChange={handleChange}
-                                className="mt-1 block w-full rounded-xl border-gold-400 shadow-glow focus:border-gold-500 focus:ring-gold-400 sm:text-base border p-3 bg-white/70" />
+                                className="mt-1 block w-full rounded-lg border-slate-200 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border p-2.5" />
                         </div>
 
                         <div className="sm:col-span-3">
-                            <label className="block text-sm font-medium text-brand-900">Categoría</label>
+                            <label className="block text-sm font-medium text-slate-700">Categoría</label>
                             <select name="category" value={formData.category} onChange={handleChange}
-                                className="mt-1 block w-full rounded-xl border-gold-400 shadow-glow focus:border-gold-500 focus:ring-gold-400 sm:text-base border p-3 bg-white/70">
+                                className="mt-1 block w-full rounded-lg border-slate-200 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border p-2.5">
                                 <option>Botas</option>
                                 <option>Tenis</option>
                                 <option>Sandalias</option>
@@ -212,29 +212,29 @@ const ProductForm = () => {
                         </div>
 
                         <div className="sm:col-span-3">
-                            <label className="block text-sm font-medium text-brand-900">Precio Base (MXN)</label>
-                            <div className="relative mt-1 rounded-xl shadow-glow">
+                            <label className="block text-sm font-medium text-slate-700">Precio Base (MXN)</label>
+                            <div className="relative mt-1">
                                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                    <span className="text-gold-500 sm:text-base">$</span>
+                                    <span className="text-slate-400 sm:text-sm">$</span>
                                 </div>
                                 <input type="number" name="price" required value={formData.price} onChange={handleChange} placeholder="0.00"
-                                    className="block w-full rounded-xl border-gold-400 pl-7 focus:border-gold-500 focus:ring-gold-400 sm:text-base border p-3 bg-white/70" />
+                                    className="block w-full rounded-lg border-slate-200 pl-7 focus:border-brand-500 focus:ring-brand-500 sm:text-sm border p-2.5 shadow-sm" />
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="pt-8 space-y-6">
+                <div className="pt-6 space-y-6">
                     <div>
-                        <h3 className="text-xl font-display font-bold leading-6 text-gold-500">Imágenes</h3>
-                        <p className="mt-1 text-sm text-brand-400">URLs de las imágenes del producto.</p>
+                        <h3 className="text-lg font-display font-bold leading-6 text-slate-900">Imágenes</h3>
+                        <p className="mt-1 text-sm text-slate-500">URLs de las imágenes del producto.</p>
                     </div>
 
                     <div className="space-y-3">
                         {formData.images.map((url, index) => (
                             <div key={index} className="flex gap-2">
                                 <input type="text" placeholder="https://..." value={url} onChange={(e) => handleImageChange(index, e.target.value)}
-                                    className="block w-full rounded-xl border-gold-400 shadow-glow focus:border-gold-500 focus:ring-gold-400 sm:text-base border p-3 bg-white/70" />
+                                    className="block w-full rounded-lg border-slate-200 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border p-2.5" />
                                 {index > 0 && (
                                     <button type="button" onClick={() => {
                                         const newImages = formData.images.filter((_, i) => i !== index);
@@ -243,45 +243,45 @@ const ProductForm = () => {
                                 )}
                             </div>
                         ))}
-                        <button type="button" onClick={addImageField} className="text-sm text-gold-500 font-bold hover:text-gold-400 flex items-center">
+                        <button type="button" onClick={addImageField} className="text-sm text-brand-500 font-bold hover:text-brand-600 flex items-center">
                             <PlusIcon className="h-4 w-4 mr-1" /> Agregar otra imagen
                         </button>
                     </div>
                 </div>
 
-                <div className="pt-8 space-y-6">
+                <div className="pt-6 space-y-6">
                     <div className="flex justify-between items-center">
                         <div>
-                            <h3 className="text-xl font-display font-bold leading-6 text-gold-500">Variantes e Inventario</h3>
-                            <p className="mt-1 text-sm text-brand-400">Define las combinaciones de Talla/Color y su stock inicial.</p>
+                            <h3 className="text-lg font-display font-bold leading-6 text-slate-900">Variantes e Inventario</h3>
+                            <p className="mt-1 text-sm text-slate-500">Define las combinaciones de Talla/Color y su stock inicial.</p>
                         </div>
-                        <button type="button" onClick={addVariant} className="inline-flex items-center rounded-full border border-gold-400 bg-white px-4 py-2 text-base font-bold leading-4 text-gold-500 shadow-glow hover:bg-gold-50 focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 transition-all">
+                        <button type="button" onClick={addVariant} className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 transition-all">
                             <PlusIcon className="-ml-0.5 mr-2 h-4 w-4" aria-hidden="true" />
                             Agregar Variante
                         </button>
                     </div>
 
-                    <div className="bg-brand-50/70 p-4 rounded-xl border border-gold-100">
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
                         {variants.map((variant, index) => (
                             <div key={index} className="grid grid-cols-12 gap-4 mb-4 items-end">
                                 <div className="col-span-3">
-                                    <label className="block text-xs font-bold text-brand-900">Talla</label>
+                                    <label className="block text-xs font-bold text-slate-700">Talla</label>
                                     <input type="text" value={variant.size} onChange={(e) => handleVariantChange(index, 'size', e.target.value)}
-                                        className="mt-1 block w-full rounded-xl border-gold-400 shadow-glow focus:border-gold-500 focus:ring-gold-400 sm:text-base border p-3 bg-white/70" placeholder="Ej. 27" />
+                                        className="mt-1 block w-full rounded-lg border-slate-200 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border p-2.5" placeholder="Ej. 27" />
                                 </div>
                                 <div className="col-span-4">
-                                    <label className="block text-xs font-bold text-brand-900">Color</label>
+                                    <label className="block text-xs font-bold text-slate-700">Color</label>
                                     <input type="text" value={variant.color} onChange={(e) => handleVariantChange(index, 'color', e.target.value)}
-                                        className="mt-1 block w-full rounded-xl border-gold-400 shadow-glow focus:border-gold-500 focus:ring-gold-400 sm:text-base border p-3 bg-white/70" placeholder="Ej. Negro" />
+                                        className="mt-1 block w-full rounded-lg border-slate-200 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border p-2.5" placeholder="Ej. Negro" />
                                 </div>
                                 <div className="col-span-3">
-                                    <label className="block text-xs font-bold text-brand-900">Stock Inicial</label>
+                                    <label className="block text-xs font-bold text-slate-700">Stock Inicial</label>
                                     <input type="number" value={variant.stock} onChange={(e) => handleVariantChange(index, 'stock', e.target.value)}
-                                        className="mt-1 block w-full rounded-xl border-gold-400 shadow-glow focus:border-gold-500 focus:ring-gold-400 sm:text-base border p-3 bg-white/70" />
+                                        className="mt-1 block w-full rounded-lg border-slate-200 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border p-2.5" />
                                 </div>
                                 <div className="col-span-2">
                                     {variants.length > 1 && (
-                                        <button type="button" onClick={() => removeVariant(index)} className="w-full text-red-600 hover:text-red-900 flex justify-center pb-2">
+                                        <button type="button" onClick={() => removeVariant(index)} className="w-full text-red-500 hover:text-red-700 flex justify-center pb-2">
                                             <TrashIcon className="h-5 w-5" />
                                         </button>
                                     )}
@@ -293,17 +293,17 @@ const ProductForm = () => {
 
                 <div className="pt-5">
                     <div className="flex justify-end gap-3">
-                        <button type="button" onClick={() => navigate('/admin/products')} className="rounded-full border-2 border-gold-400 bg-white py-2 px-6 text-base font-bold text-gold-500 shadow-glow hover:bg-gold-50 focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 transition-all">
+                        <button type="button" onClick={() => navigate('/admin/products')} className="rounded-lg border border-slate-200 bg-white py-2.5 px-5 text-sm font-bold text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 transition-all">
                             Cancelar
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
-                            className="inline-flex items-center justify-center rounded-full border border-transparent bg-gold-500 py-2 px-8 text-base font-bold text-brand-950 shadow-glow hover:bg-gold-400 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 transition-all"
+                            className="inline-flex items-center justify-center rounded-lg border border-transparent bg-brand-500 py-2.5 px-6 text-sm font-bold text-white shadow-sm hover:bg-brand-600 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 transition-all"
                         >
                             {loading ? (
                                 <>
-                                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-brand-950" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                     </svg>

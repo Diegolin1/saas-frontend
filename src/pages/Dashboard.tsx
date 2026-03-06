@@ -80,8 +80,8 @@ export default function Dashboard() {
             name: 'Ventas del Mes',
             stat: stats ? `$${stats.salesMonth?.toLocaleString() || '0'}` : '$0',
             icon: SparklesIcon,
-            color: 'bg-gold-500',
-            textColor: 'text-gold-500'
+            color: 'bg-blue-500',
+            textColor: 'text-blue-500'
         },
         {
             name: 'Leads Capturados (7 días)',
@@ -104,8 +104,8 @@ export default function Dashboard() {
             {/* Header Area */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl font-display font-bold text-brand-900">Hola, {user?.name || user?.email?.split('@')[0] || 'Dueño'} 👋</h2>
-                    <p className="text-brand-500 mt-1">Este es el resumen de tu maquinaria de ventas.</p>
+                    <h2 className="text-2xl font-display font-bold text-slate-900">Hola, {user?.name || user?.email?.split('@')[0] || 'Dueño'} 👋</h2>
+                    <p className="text-slate-500 mt-1">Este es el resumen de tu maquinaria de ventas.</p>
                 </div>
 
                 {/* Global Quick Action Mejorado con Tooltips */}
@@ -113,18 +113,18 @@ export default function Dashboard() {
                     <Tooltip content="Comparte este enlace con tus clientes mayoristas para que accedan a tu catálogo digital.">
                         <button
                             onClick={() => navigator.clipboard.writeText(window.location.origin)}
-                            className="flex items-center gap-2 glass px-5 py-2 rounded-xl text-sm font-semibold text-brand-900 shadow-glass border border-brand-100 hover:bg-white/80 transition-all hover:scale-105 focus:outline-none"
+                            className="flex items-center gap-2 bg-white px-5 py-2 rounded-xl text-sm font-semibold text-slate-700 shadow-sm border border-slate-200 hover:bg-slate-50 transition-all focus:outline-none"
                         >
-                            <QrCodeIcon className="w-5 h-5 text-gold-500" />
+                            <QrCodeIcon className="w-5 h-5 text-brand-500" />
                             Copiar Mi Enlace
                         </button>
                     </Tooltip>
                     <Tooltip content="Agrega tu primer producto estrella para activar tu showroom.">
                         <Link
                             to="/admin/products"
-                            className="flex items-center gap-2 bg-gold-500 text-brand-950 px-6 py-2 rounded-xl text-sm font-bold shadow-glow hover:bg-gold-400 transition-all hover:scale-105 animate-pulse focus:outline-none"
+                            className="flex items-center gap-2 bg-brand-500 text-white px-6 py-2 rounded-xl text-sm font-bold shadow-sm hover:bg-brand-600 transition-all focus:outline-none"
                         >
-                            <SparklesIcon className="w-5 h-5 text-brand-900" />
+                            <SparklesIcon className="w-5 h-5" />
                             Nuevo Producto
                         </Link>
                     </Tooltip>
@@ -134,30 +134,30 @@ export default function Dashboard() {
             {/* Onboarding visual para cuentas nuevas */}
             {isNewAccount ? (
                 /* SMART EMPTY STATE PREMIUM */
-                <div className="relative overflow-hidden rounded-3xl glass-dark px-8 py-16 shadow-glass-dark sm:px-16 sm:py-24 border border-gold-500/20">
-                    <div className="absolute -top-24 -right-24 w-96 h-96 bg-brand-500/20 blur-[100px] rounded-full pointer-events-none"></div>
-                    <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-gold-500/10 blur-[100px] rounded-full pointer-events-none"></div>
+                <div className="relative overflow-hidden rounded-2xl bg-white border border-slate-200 px-8 py-14 sm:px-16 sm:py-20">
+                    <div className="absolute -top-24 -right-24 w-80 h-80 bg-brand-100/40 blur-[80px] rounded-full pointer-events-none"></div>
+                    <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-brand-50/30 blur-[80px] rounded-full pointer-events-none"></div>
 
                     <div className="relative z-10 max-w-2xl mx-auto text-center">
-                        <div className="inline-flex items-center justify-center p-4 glass rounded-2xl border border-gold-500/30 mb-8">
-                            <RocketLaunchIcon className="w-12 h-12 text-gold-400 animate-pulse" />
+                        <div className="inline-flex items-center justify-center p-3 bg-brand-50 rounded-xl mb-6">
+                            <RocketLaunchIcon className="w-10 h-10 text-brand-500" />
                         </div>
-                        <h2 className="text-3xl sm:text-4xl font-display font-bold text-gold-400 tracking-tight mb-4 drop-shadow-glow animate-fade-in">
-                            Bienvenido a tu Nuevo Showroom Digital
+                        <h2 className="text-2xl sm:text-3xl font-display font-bold text-slate-900 tracking-tight mb-3">
+                            Bienvenido a tu Showroom Digital
                         </h2>
-                        <p className="text-lg text-brand-200 mb-10 leading-relaxed animate-fade-in">
-                            Tu motor de ventas B2B está listo. <span className="text-gold-400 font-bold">¿Listo para tu primer pedido?</span> Sube tu producto estrella y comparte tu enlace para empezar a recibir pedidos por WhatsApp hoy mismo.
+                        <p className="text-base text-slate-500 mb-8 leading-relaxed">
+                            Tu motor de ventas B2B está listo. <span className="text-brand-600 font-semibold">¿Listo para tu primer pedido?</span> Sube tu producto estrella y comparte tu enlace para empezar a recibir pedidos por WhatsApp hoy mismo.
                         </p>
 
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in">
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                             <Tooltip content="Haz clic aquí para subir tu primer producto y activar tu catálogo.">
-                                <Link to="/admin/products" className="w-full sm:w-auto px-8 py-4 bg-gold-500 hover:bg-gold-400 text-brand-950 font-bold rounded-xl transition-all shadow-glow hover:scale-105 flex items-center justify-center gap-2 animate-pulse focus:outline-none">
+                                <Link to="/admin/products" className="w-full sm:w-auto px-6 py-3 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 focus:outline-none">
                                     Subir Primer Modelo
                                     <ArrowTopRightOnSquareIcon className="w-5 h-5" />
                                 </Link>
                             </Tooltip>
                             <Tooltip content="Mira un tutorial rápido para dominar tu showroom.">
-                                <a href="#" onClick={(e) => e.preventDefault()} className="w-full sm:w-auto px-8 py-4 glass hover:bg-white/10 text-gold-400 font-semibold rounded-xl border border-gold-500/30 transition-all backdrop-blur-md flex items-center justify-center gap-2 hover:scale-105 focus:outline-none">
+                                <a href="#" onClick={(e) => e.preventDefault()} className="w-full sm:w-auto px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl border border-slate-200 transition-all flex items-center justify-center gap-2 focus:outline-none">
                                     <SparklesIcon className="w-5 h-5" />
                                     Tutorial (Próximamente)
                                 </a>
@@ -172,16 +172,16 @@ export default function Dashboard() {
                         {statsCards.map((item) => (
                             <div
                                 key={item.name}
-                                className="relative overflow-hidden rounded-2xl glass p-6 shadow-glow border border-gold-500/10 hover:shadow-glass-dark transition-all group hover:scale-105 duration-300 animate-fade-in"
+                                className="relative overflow-hidden rounded-2xl bg-white p-6 shadow-sm border border-slate-100 hover:shadow-md transition-all group duration-300"
                             >
                                 <dt>
-                                    <div className={`absolute rounded-xl ${item.color} bg-opacity-20 p-3 group-hover:scale-110 transition-transform shadow-glow`}>
-                                        <item.icon className={`h-6 w-6 ${item.textColor} drop-shadow-glow`} aria-hidden="true" />
+                                    <div className={`absolute rounded-xl ${item.color} bg-opacity-10 p-3 group-hover:scale-110 transition-transform`}>
+                                        <item.icon className={`h-6 w-6 ${item.textColor}`} aria-hidden="true" />
                                     </div>
-                                    <p className="ml-16 truncate text-sm font-medium text-brand-500">{item.name}</p>
+                                    <p className="ml-16 truncate text-sm font-medium text-slate-500">{item.name}</p>
                                 </dt>
                                 <dd className="ml-16 flex items-baseline pb-1 mt-2">
-                                    <p className="text-3xl font-display font-bold text-brand-900">{item.stat}</p>
+                                    <p className="text-3xl font-display font-bold text-slate-900">{item.stat}</p>
                                 </dd>
                             </div>
                         ))}
