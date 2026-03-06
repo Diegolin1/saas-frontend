@@ -22,6 +22,11 @@ export const deletePriceList = async (id: string) => {
     return response.data;
 };
 
+export const updatePriceList = async (id: string, data: { name?: string; currency?: string; isDefault?: boolean }) => {
+    const response = await api.put(`/price-lists/${id}`, data);
+    return response.data;
+};
+
 export const getPriceListItems = async (priceListId: string) => {
     const response = await api.get(`/price-lists/${priceListId}/items`);
     return response.data;

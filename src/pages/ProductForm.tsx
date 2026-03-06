@@ -4,17 +4,21 @@ import { createProduct, getProduct, updateProduct, ProductVariant, ProductImage 
 import { getErrorMessage } from '../services/api';
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { Toast } from '../components/Toast';
+import { getSettings } from '../services/settings.service';
+
+const DEFAULT_CATEGORIES = ['Botas', 'Tenis', 'Sandalias', 'Zapatos Formales', 'Accesorios'];
 
 const ProductForm = () => {
     const navigate = useNavigate();
     const { id } = useParams();
     const isEdit = Boolean(id);
     const [loading, setLoading] = useState(false);
+    const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
     const [formData, setFormData] = useState({
         name: '',
         sku: '',
         description: '',
-        category: 'Botas',
+        category: '',
         price: '',
         images: [''] // Start with one empty image field
     });
@@ -52,6 +56,20 @@ const ProductForm = () => {
     const removeVariant = (index: number) => {
         setVariants(variants.filter((_, i) => i !== index));
     };
+
+    useEffect(() => {
+        getSettings().then(data => {
+            const cats = data.settings?.categories;
+            if (cats && cats.length > 0) {
+                setCategories(cats);
+                if (!formData.category) setFormData(prev => ({ ...prev, category: cats[0] }));
+            } else {
+                if (!formData.category) setFormData(prev => ({ ...prev, category: DEFAULT_CATEGORIES[0] }));
+            }
+        }).catch(() => {
+            if (!formData.category) setFormData(prev => ({ ...prev, category: DEFAULT_CATEGORIES[0] }));
+        });
+    }, []);
 
     useEffect(() => {
         const loadProduct = async () => {
@@ -203,11 +221,9 @@ const ProductForm = () => {
                             <label className="block text-sm font-medium text-slate-700">Categoría</label>
                             <select name="category" value={formData.category} onChange={handleChange}
                                 className="mt-1 block w-full rounded-lg border-slate-200 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border p-2.5">
-                                <option>Botas</option>
-                                <option>Tenis</option>
-                                <option>Sandalias</option>
-                                <option>Zapatos Formales</option>
-                                <option>Accesorios</option>
+                                {categories.map(cat => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                ))}
                             </select>
                         </div>
 

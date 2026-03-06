@@ -7,6 +7,32 @@ import { PlusIcon, PencilSquareIcon, TrashIcon, XMarkIcon, UserIcon } from '@her
 import Pagination from '../components/Pagination';
 import { useToast } from '../context/ToastContext';
 import { getErrorMessage } from '../services/api';
+import { formatMXN } from '../utils/format';
+
+const MEXICAN_STATES = [
+    'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas',
+    'Chihuahua', 'Ciudad de México', 'Coahuila', 'Colima', 'Durango', 'Estado de México',
+    'Guanajuato', 'Guerrero', 'Hidalgo', 'Jalisco', 'Michoacán', 'Morelos', 'Nayarit',
+    'Nuevo León', 'Oaxaca', 'Puebla', 'Querétaro', 'Quintana Roo', 'San Luis Potosí',
+    'Sinaloa', 'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala', 'Veracruz', 'Yucatán', 'Zacatecas'
+];
+
+// RFC validation: 3-4 letters + 6 digits (date) + 3 alphanumerics (homoclave)
+function isValidRFC(rfc: string): boolean {
+    if (!rfc) return true; // Optional field
+    const pattern = /^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/;
+    return pattern.test(rfc.toUpperCase());
+}
+
+interface AddressForm {
+    street: string;
+    extNumber: string;
+    intNumber: string;
+    neighborhood: string;
+    zipCode: string;
+    city: string;
+    state: string;
+}
 
 export default function Customers() {
     const { showToast } = useToast();
@@ -26,8 +52,12 @@ export default function Customers() {
         code: '',
         creditLimit: 0,
         priceListId: '',
-        sellerId: '' // Added sellerId
+        sellerId: ''
     });
+    const [addressForm, setAddressForm] = useState<AddressForm>({
+        street: '', extNumber: '', intNumber: '', neighborhood: '', zipCode: '', city: '', state: ''
+    });
+    const [rfcError, setRfcError] = useState('');
 
     // Debounce search
     useEffect(() => {
@@ -62,6 +92,7 @@ export default function Customers() {
     }, [page, searchDebounce]);
 
     const openModal = (customer?: Customer) => {
+        setRfcError('');
         if (customer) {
             setCurrentCustomer(customer);
             setFormData({
@@ -70,7 +101,17 @@ export default function Customers() {
                 code: customer.code || '',
                 creditLimit: customer.creditLimit,
                 priceListId: customer.priceListId || '',
-                sellerId: customer.sellerId || '' // Populating sellerId
+                sellerId: customer.sellerId || ''
+            });
+            const addr = (customer.shippingAddress || {}) as Record<string, string>;
+            setAddressForm({
+                street: addr.street || '',
+                extNumber: addr.extNumber || '',
+                intNumber: addr.intNumber || '',
+                neighborhood: addr.neighborhood || '',
+                zipCode: addr.zipCode || '',
+                city: addr.city || '',
+                state: addr.state || ''
             });
         } else {
             setCurrentCustomer(null);
@@ -82,18 +123,36 @@ export default function Customers() {
                 priceListId: '',
                 sellerId: ''
             });
+            setAddressForm({ street: '', extNumber: '', intNumber: '', neighborhood: '', zipCode: '', city: '', state: '' });
         }
         setIsModalOpen(true);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setRfcError('');
+
+        // Validate RFC if provided
+        if (formData.taxId && !isValidRFC(formData.taxId)) {
+            setRfcError('RFC inválido. Formato: 3-4 letras + 6 dígitos + 3 caracteres (Ej. XAXX010101000)');
+            return;
+        }
+
+        // Build shippingAddress from structured fields
+        const hasAddress = Object.values(addressForm).some(v => v.trim() !== '');
+        const shippingAddress = hasAddress ? { ...addressForm } : undefined;
+
         try {
+            const payload = {
+                ...formData,
+                taxId: formData.taxId ? formData.taxId.toUpperCase().trim() : '',
+                shippingAddress
+            };
             if (currentCustomer?.id) {
-                await updateCustomer(currentCustomer.id, formData);
+                await updateCustomer(currentCustomer.id, payload);
                 showToast('Cliente actualizado correctamente', 'success');
             } else {
-                await createCustomer(formData);
+                await createCustomer(payload);
                 showToast('Cliente creado correctamente', 'success');
             }
             setIsModalOpen(false);
@@ -191,7 +250,7 @@ export default function Customers() {
                                                     {customer.priceList?.name || 'Base'}
                                                 </span>
                                             </td>
-                                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">${customer.creditLimit?.toLocaleString()}</td>
+                                            <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{formatMXN(customer.creditLimit, false)}</td>
                                             <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                                                 <button onClick={() => openModal(customer)} className="text-indigo-600 hover:text-indigo-900 mr-4">
                                                     <PencilSquareIcon className="h-5 w-5" />
@@ -221,10 +280,10 @@ export default function Customers() {
             {/* Modal */}
             <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} className="relative z-50">
                 <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-                <div className="fixed inset-0 flex items-center justify-center p-4">
-                    <Dialog.Panel className="mx-auto max-w-lg rounded bg-white p-6 w-full shadow-xl">
-                        <div className="flex justify-between items-center mb-4">
-                            <Dialog.Title className="text-lg font-medium">
+                <div className="fixed inset-0 flex items-center justify-center p-4 overflow-y-auto">
+                    <Dialog.Panel className="mx-auto max-w-2xl rounded-xl bg-white p-6 w-full shadow-xl max-h-[90vh] overflow-y-auto">
+                        <div className="flex justify-between items-center mb-5">
+                            <Dialog.Title className="text-lg font-display font-bold text-slate-900">
                                 {currentCustomer ? 'Editar Cliente' : 'Nuevo Cliente'}
                             </Dialog.Title>
                             <button onClick={() => setIsModalOpen(false)}>
@@ -232,71 +291,61 @@ export default function Customers() {
                             </button>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="space-y-4">
+                        <form onSubmit={handleSubmit} className="space-y-5">
+                            {/* Basic info */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700">Razón Social *</label>
+                                <input
+                                    type="text" required
+                                    className="mt-1 block w-full rounded-lg border-slate-200 border p-2.5 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm"
+                                    value={formData.businessName}
+                                    onChange={e => setFormData({ ...formData, businessName: e.target.value })}
+                                />
+                            </div>
+
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">Código</label>
+                                    <label className="block text-sm font-medium text-slate-700">Código</label>
                                     <input
                                         type="text"
-                                        className="mt-1 block w-full rounded-md border-gray-300 border p-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                        className="mt-1 block w-full rounded-lg border-slate-200 border p-2.5 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm"
                                         value={formData.code}
                                         onChange={e => setFormData({ ...formData, code: e.target.value })}
                                         placeholder="Ej. C-001"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">RFC</label>
+                                    <label className="block text-sm font-medium text-slate-700">RFC</label>
                                     <input
-                                        type="text"
-                                        className="mt-1 block w-full rounded-md border-gray-300 border p-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                        type="text" maxLength={13}
+                                        className={`mt-1 block w-full rounded-lg border p-2.5 shadow-sm focus:ring-brand-500 sm:text-sm uppercase ${rfcError ? 'border-red-300 focus:border-red-500' : 'border-slate-200 focus:border-brand-500'}`}
                                         value={formData.taxId}
-                                        onChange={e => setFormData({ ...formData, taxId: e.target.value })}
+                                        onChange={e => { setFormData({ ...formData, taxId: e.target.value.toUpperCase() }); setRfcError(''); }}
+                                        placeholder="XAXX010101000"
                                     />
+                                    {rfcError && <p className="mt-1 text-xs text-red-600">{rfcError}</p>}
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Razón Social</label>
-                                <input
-                                    type="text"
-                                    required
-                                    className="mt-1 block w-full rounded-md border-gray-300 border p-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                    value={formData.businessName}
-                                    onChange={e => setFormData({ ...formData, businessName: e.target.value })}
-                                />
-                            </div>
-
-                            {/* Seller Selection */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Vendedor Asignado</label>
-                                <select
-                                    className="mt-1 block w-full rounded-md border-gray-300 border p-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                    value={formData.sellerId}
-                                    onChange={e => setFormData({ ...formData, sellerId: e.target.value })}
-                                >
-                                    <option value="">-- Sin Asignar --</option>
-                                    {potentialSellers.map(u => (
-                                        <option key={u.id} value={u.id}>
-                                            {u.fullName} ({u.role})
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
+                            {/* Seller + Price List */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">Límite de Crédito</label>
-                                    <input
-                                        type="number"
-                                        className="mt-1 block w-full rounded-md border-gray-300 border p-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                        value={formData.creditLimit}
-                                        onChange={e => setFormData({ ...formData, creditLimit: Number(e.target.value) })}
-                                    />
+                                    <label className="block text-sm font-medium text-slate-700">Vendedor Asignado</label>
+                                    <select
+                                        className="mt-1 block w-full rounded-lg border-slate-200 border p-2.5 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm"
+                                        value={formData.sellerId}
+                                        onChange={e => setFormData({ ...formData, sellerId: e.target.value })}
+                                    >
+                                        <option value="">— Sin Asignar —</option>
+                                        {potentialSellers.map(u => (
+                                            <option key={u.id} value={u.id}>{u.fullName} ({u.role})</option>
+                                        ))}
+                                    </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">Lista de Precios</label>
+                                    <label className="block text-sm font-medium text-slate-700">Lista de Precios</label>
                                     <select
-                                        className="mt-1 block w-full rounded-md border-gray-300 border p-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                        className="mt-1 block w-full rounded-lg border-slate-200 border p-2.5 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm"
                                         value={formData.priceListId}
                                         onChange={e => setFormData({ ...formData, priceListId: e.target.value })}
                                     >
@@ -308,18 +357,74 @@ export default function Customers() {
                                 </div>
                             </div>
 
-                            <div className="mt-6 flex justify-end gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsModalOpen(false)}
-                                    className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-                                >
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700">Límite de Crédito (MXN)</label>
+                                <div className="relative mt-1">
+                                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"><span className="text-slate-400 text-sm">$</span></div>
+                                    <input
+                                        type="number" min="0"
+                                        className="block w-full rounded-lg border-slate-200 border pl-7 p-2.5 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm"
+                                        value={formData.creditLimit}
+                                        onChange={e => setFormData({ ...formData, creditLimit: Number(e.target.value) })}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Structured Mexican Address */}
+                            <div className="border-t border-slate-200 pt-5">
+                                <h4 className="text-sm font-bold text-slate-700 mb-3">Dirección de Envío</h4>
+                                <div className="grid grid-cols-6 gap-3">
+                                    <div className="col-span-4">
+                                        <label className="block text-xs font-medium text-slate-600">Calle</label>
+                                        <input type="text" className="mt-1 block w-full rounded-lg border-slate-200 border p-2 shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm"
+                                            value={addressForm.street} onChange={e => setAddressForm({ ...addressForm, street: e.target.value })} />
+                                    </div>
+                                    <div className="col-span-1">
+                                        <label className="block text-xs font-medium text-slate-600">No. Ext</label>
+                                        <input type="text" className="mt-1 block w-full rounded-lg border-slate-200 border p-2 shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm"
+                                            value={addressForm.extNumber} onChange={e => setAddressForm({ ...addressForm, extNumber: e.target.value })} />
+                                    </div>
+                                    <div className="col-span-1">
+                                        <label className="block text-xs font-medium text-slate-600">No. Int</label>
+                                        <input type="text" className="mt-1 block w-full rounded-lg border-slate-200 border p-2 shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm"
+                                            value={addressForm.intNumber} onChange={e => setAddressForm({ ...addressForm, intNumber: e.target.value })} />
+                                    </div>
+                                    <div className="col-span-3">
+                                        <label className="block text-xs font-medium text-slate-600">Colonia</label>
+                                        <input type="text" className="mt-1 block w-full rounded-lg border-slate-200 border p-2 shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm"
+                                            value={addressForm.neighborhood} onChange={e => setAddressForm({ ...addressForm, neighborhood: e.target.value })} />
+                                    </div>
+                                    <div className="col-span-1">
+                                        <label className="block text-xs font-medium text-slate-600">C.P.</label>
+                                        <input type="text" maxLength={5} className="mt-1 block w-full rounded-lg border-slate-200 border p-2 shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm"
+                                            value={addressForm.zipCode} onChange={e => setAddressForm({ ...addressForm, zipCode: e.target.value.replace(/\D/g, '').slice(0, 5) })} />
+                                    </div>
+                                    <div className="col-span-2">
+                                        <label className="block text-xs font-medium text-slate-600">Ciudad / Municipio</label>
+                                        <input type="text" className="mt-1 block w-full rounded-lg border-slate-200 border p-2 shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm"
+                                            value={addressForm.city} onChange={e => setAddressForm({ ...addressForm, city: e.target.value })} />
+                                    </div>
+                                    <div className="col-span-3">
+                                        <label className="block text-xs font-medium text-slate-600">Estado</label>
+                                        <select className="mt-1 block w-full rounded-lg border-slate-200 border p-2 shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm"
+                                            value={addressForm.state} onChange={e => setAddressForm({ ...addressForm, state: e.target.value })}>
+                                            <option value="">Seleccionar estado...</option>
+                                            {MEXICAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="col-span-3">
+                                        {/* Spacer for alignment */}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
+                                <button type="button" onClick={() => setIsModalOpen(false)}
+                                    className="rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm hover:bg-slate-50 transition-all">
                                     Cancelar
                                 </button>
-                                <button
-                                    type="submit"
-                                    className="rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700"
-                                >
+                                <button type="submit"
+                                    className="rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-brand-600 transition-all">
                                     Guardar
                                 </button>
                             </div>

@@ -7,6 +7,9 @@ export interface Promotion {
     type: 'PERCENTAGE' | 'FIXED';
     expiresAt?: string | null;
     isActive: boolean;
+    usageLimit?: number | null;
+    usageCount: number;
+    minOrderAmount?: number | null;
     createdAt: string;
 }
 
@@ -15,7 +18,10 @@ export const getPromotions = async (): Promise<Promotion[]> => {
     return response.data;
 };
 
-export const createPromotion = async (data: { code: string; discount: number; type: string; expiresAt?: string }) => {
+export const createPromotion = async (data: {
+    code: string; discount: number; type: string;
+    expiresAt?: string; usageLimit?: number | null; minOrderAmount?: number | null;
+}) => {
     const response = await api.post('/promotions', data);
     return response.data;
 };
