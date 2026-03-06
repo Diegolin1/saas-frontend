@@ -52,6 +52,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 const decoded = jwtDecode<JwtPayload>(token);
                 if (decoded.exp * 1000 < Date.now()) {
                     logout();
+                    setLoading(false);
                 } else {
                     if (!user) {
                         const savedUser = localStorage.getItem('user_data');
@@ -75,6 +76,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                             });
                         }
                     }
+                    setLoading(false);
 
                     // Set up auto-logout when token expires
                     const msUntilExpiry = decoded.exp * 1000 - Date.now();
@@ -85,9 +87,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 }
             } catch (error) {
                 logout();
+                setLoading(false);
             }
+        } else {
+            setLoading(false);
         }
-        setLoading(false);
     }, [token, logout]);
 
     const login = (newToken: string, userData: User) => {
