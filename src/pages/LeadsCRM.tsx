@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { SkeletonPage } from '../components/Skeleton';
 import { getLeads, updateLead, Lead, LeadStatus, PaginationInfo } from '../services/lead.service';
 import { getUsers, User } from '../services/user.service';
-import { ShoppingCartIcon, ChatBubbleLeftEllipsisIcon, PhoneIcon, FunnelIcon, MagnifyingGlassIcon, UserCircleIcon } from '@heroicons/react/24/outline';
+import { ShoppingCartIcon, ChatBubbleLeftEllipsisIcon, PhoneIcon, FunnelIcon, MagnifyingGlassIcon, UserCircleIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import { exportToCSV } from '../utils/export';
 import { Tooltip } from '../components/Tooltip';
 import Pagination from '../components/Pagination';
 import { useToast } from '../context/ToastContext';
@@ -110,6 +111,26 @@ export default function LeadsCRM() {
                         Gestiona tus leads B2B: cambia estado, asigna vendedor y recupera carritos abandonados.
                     </p>
                 </div>
+                {leads.length > 0 && (
+                    <button
+                        onClick={() => {
+                            const dataToExport = leads.map(l => ({
+                                'Prospecto': l.name || 'Sin Nombre',
+                                'Teléfono': l.phone,
+                                'Estado': STATUS_CONFIG[l.status]?.label || l.status,
+                                'Vendedor Asignado': l.assignedTo ? l.assignedTo.fullName : 'Sin Asignar',
+                                'Pares en Carrito': l.carts?.[0]?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0,
+                                'Total Abandonado': l.carts?.[0]?.items?.reduce((span, item) => span + item.subtotal, 0) || 0,
+                                'Fecha Captura': formatDate(l.createdAt)
+                            }));
+                            exportToCSV(dataToExport, 'prospectos-crm');
+                        }}
+                        className="mt-4 sm:mt-0 flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all shadow-sm"
+                    >
+                        <ArrowDownTrayIcon className="h-4 w-4" />
+                        Exportar CSV
+                    </button>
+                )}
             </div>
 
             {/* Filters bar */}

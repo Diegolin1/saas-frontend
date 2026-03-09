@@ -69,11 +69,15 @@ export default function Cart() {
             if (companyId) {
                 await api.post('/leads', { name: lead.name, phone: lead.phone, companyId });
             }
+
+            const cartId = localStorage.getItem('saas_cart_id');
+
             await createOrder({
                 customerId: undefined,
                 items: items.map(item => ({ productId: item.productId, variantId: item.variantId, name: item.name, price: item.price, image: item.image, size: item.size, color: item.color, quantity: item.quantity, subtotal: item.subtotal })),
                 notes: `Pedido desde carrito web. Lead: ${lead.name} (${lead.phone})`,
-                promotionCode: appliedPromo?.code || undefined
+                promotionCode: appliedPromo?.code || undefined,
+                cartId: cartId || undefined
             });
 
             let text = `Hola, soy ${lead.name}.\n\nQuiero confirmar el siguiente pedido:\n\n`;
@@ -93,6 +97,7 @@ export default function Cart() {
 
             window.open(waUrl, '_blank');
             clearCart();
+            localStorage.removeItem('saas_cart_id');
             setFeedback({ message: 'Pedido enviado y registrado correctamente.', type: 'success' });
             setTimeout(() => { window.location.href = '/'; }, 2000);
         } catch {

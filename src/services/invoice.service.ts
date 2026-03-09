@@ -25,8 +25,12 @@ export interface CreateInvoiceData {
 
 export const createInvoice = async (data: CreateInvoiceData): Promise<Invoice> => {
     try {
-        const response = await api.post('/invoices', data);
-        return response.data;
+        const response = await api.post(`/orders/${data.orderId}/invoice`, {
+            paymentForm: data.paymentForm,
+            paymentMethod: data.paymentMethod,
+            cfdiUse: data.cfdiUse
+        });
+        return response.data.invoice; // Backend returns { message, invoice }
     } catch (error) {
         throw new Error(getErrorMessage(error));
     }
@@ -41,13 +45,13 @@ export const getInvoices = async (): Promise<Invoice[]> => {
     }
 };
 
-export const downloadInvoicePdf = async (id: string, uuid?: string): Promise<void> => {
+export const downloadInvoicePdf = async (invoiceId: string, uuid?: string): Promise<void> => {
     try {
-        const response = await api.get(`/invoices/${id}/pdf`, { responseType: 'blob' });
+        const response = await api.get(`/invoices/${invoiceId}/pdf`, { responseType: 'blob' });
         const url = window.URL.createObjectURL(new Blob([response.data]));
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', `Factura_${uuid || id}.pdf`);
+        link.setAttribute('download', `Factura_${uuid || invoiceId}.pdf`);
         document.body.appendChild(link);
         link.click();
         link.parentNode?.removeChild(link);
@@ -56,13 +60,13 @@ export const downloadInvoicePdf = async (id: string, uuid?: string): Promise<voi
     }
 };
 
-export const downloadInvoiceXml = async (id: string, uuid?: string): Promise<void> => {
+export const downloadInvoiceXml = async (invoiceId: string, uuid?: string): Promise<void> => {
     try {
-        const response = await api.get(`/invoices/${id}/xml`, { responseType: 'blob' });
+        const response = await api.get(`/invoices/${invoiceId}/xml`, { responseType: 'blob' });
         const url = window.URL.createObjectURL(new Blob([response.data]));
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', `Factura_${uuid || id}.xml`);
+        link.setAttribute('download', `Factura_${uuid || invoiceId}.xml`);
         document.body.appendChild(link);
         link.click();
         link.parentNode?.removeChild(link);

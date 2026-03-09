@@ -96,7 +96,7 @@ export const getPublicCatalog = async (companyId: string = DEFAULT_COMPANY_ID, p
 export const importProductsCsv = async (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await api.post('/products/bulk-import', formData, {
+    const response = await api.post('/import/products', formData, {
         headers: {
             'Content-Type': 'multipart/form-data'
         }

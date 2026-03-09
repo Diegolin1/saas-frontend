@@ -20,6 +20,7 @@ export interface CreateOrderData {
     items: OrderItemInput[];
     notes?: string;
     promotionCode?: string;
+    cartId?: string;
 }
 
 export interface OrderItem {

@@ -91,7 +91,7 @@ export default function ProductDetail() {
     }
 
     const getTotalPairs = () => Object.values(orderMatrix).reduce((a, b) => a + b, 0)
-    const getPrice = () => (product as Record<string, unknown> & { price?: number })?.price || 0
+    const getPrice = () => (product as unknown as Record<string, unknown> & { price?: number })?.price || 0
     const getTotalPrice = () => getTotalPairs() * getPrice()
 
     const handleAddToOrder = (e: React.FormEvent | React.MouseEvent) => {

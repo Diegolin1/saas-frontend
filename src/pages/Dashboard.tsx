@@ -5,6 +5,7 @@ import { SkeletonCard, SkeletonChart } from '../components/Skeleton'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Tooltip } from '../components/Tooltip'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts'
 
 interface DashboardStats {
     salesToday: number;
@@ -207,7 +208,6 @@ export default function Dashboard() {
 
                     {/* Sales chart - 14 days */}
                     {salesByDay.length > 0 && (() => {
-                        const maxVal = Math.max(...salesByDay.map(d => d.total), 1);
                         return (
                             <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
                                 <div className="flex items-center justify-between mb-6">
@@ -221,26 +221,37 @@ export default function Dashboard() {
                                         Total: ${salesByDay.reduce((s, d) => s + d.total, 0).toLocaleString('es-MX', { minimumFractionDigits: 0 })}
                                     </span>
                                 </div>
-                                <div className="flex items-end gap-1.5 h-40">
-                                    {salesByDay.map((day) => {
-                                        const pct = maxVal > 0 ? (day.total / maxVal) * 100 : 0;
-                                        const dateLabel = new Date(day.date + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short' });
-                                        return (
-                                            <div key={day.date} className="flex-1 flex flex-col justify-end items-center gap-1 group cursor-default h-full">
-                                                <div className="relative w-full">
-                                                    <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] font-semibold px-2 py-1 rounded whitespace-nowrap z-10 transition-opacity">
-                                                        ${day.total.toLocaleString('es-MX')}
-                                                    </div>
-                                                </div>
-                                                <div
-                                                    className={`w-full rounded-t transition-all duration-300 ${day.total > 0 ? 'bg-brand-500 group-hover:bg-brand-600' : 'bg-slate-100'
-                                                        }`}
-                                                    style={{ height: `${Math.max(pct, 2)}%`, minHeight: '2px' }}
-                                                />
-                                                <span className="text-[9px] text-slate-400 leading-tight truncate w-full text-center">{dateLabel}</span>
-                                            </div>
-                                        );
-                                    })}
+                                <div className="h-64 mt-4 w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={salesByDay} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                            <XAxis
+                                                dataKey="date"
+                                                tickFormatter={(str) => new Date(str + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}
+                                                axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} dy={10}
+                                            />
+                                            <YAxis
+                                                axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }}
+                                                tickFormatter={(val) => `$${val > 999 ? (val / 1000).toFixed(1) + 'k' : val}`}
+                                            />
+                                            <RechartsTooltip
+                                                cursor={{ fill: '#f8fafc' }}
+                                                content={({ active, payload, label }) => {
+                                                    if (active && payload && payload.length) {
+                                                        const dateLabel = new Date(label + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'long', day: '2-digit', month: 'long' });
+                                                        return (
+                                                            <div className="bg-slate-800 text-white p-3 rounded-lg shadow-xl border border-slate-700">
+                                                                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">{dateLabel}</p>
+                                                                <p className="font-display font-bold text-lg">${Number(payload[0].value).toLocaleString('es-MX')}</p>
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return null;
+                                                }}
+                                            />
+                                            <Bar dataKey="total" fill="#0ea5e9" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
                                 </div>
                             </div>
                         );

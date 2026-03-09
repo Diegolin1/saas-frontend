@@ -53,13 +53,13 @@ export default function Catalog() {
                 })
                 if (cancelled) return
                 if (data && data.products) {
-                    setProducts(data.products)
+                    setProducts(prev => page === 1 ? data.products : [...prev, ...data.products])
                     setTotalPages(data.pagination?.totalPages || 1)
-                    setTotalCount(data.pagination?.total || data.products.length)
+                    setTotalCount(prevCount => data.pagination?.total || (page === 1 ? data.products.length : prevCount + data.products.length))
                 } else if (Array.isArray(data)) {
-                    setProducts(data)
+                    setProducts(prev => page === 1 ? data : [...prev, ...data])
                     setTotalPages(1)
-                    setTotalCount(data.length)
+                    setTotalCount(prevCount => page === 1 ? data.length : prevCount + data.length)
                 } else {
                     setProducts([])
                     setTotalPages(1)
@@ -105,6 +105,21 @@ export default function Catalog() {
         return Array.from(sizeMap.keys())
     }
 
+    // Intersection Observer for Infinite Scroll
+    const loaderRef = useRef<HTMLDivElement>(null)
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && !loading && page < totalPages) {
+                    setPage(p => p + 1)
+                }
+            },
+            { threshold: 0.1, rootMargin: '200px' }
+        )
+        if (loaderRef.current) observer.observe(loaderRef.current)
+        return () => observer.disconnect()
+    }, [loading, page, totalPages])
+
     return (
         <div className="min-h-screen bg-white">
 
@@ -112,7 +127,7 @@ export default function Catalog() {
                  FEATURE 1: Enterprise Hero Slider
                  Only shown on the first page when no filters/search are active
                ══════════════════════════════════════════════════════════ */}
-            {page === 1 && !searchQuery && !selectedCategory && !loading && (
+            {page === 1 && !searchQuery && !selectedCategory && (
                 <HeroSlider />
             )}
 
@@ -164,8 +179,8 @@ export default function Catalog() {
                 </div>
             </div>
 
-            {/* ── Loading ─────────────────────────────────────────────────────────── */}
-            {loading && (
+            {/* ── Loading (Eager Initial) ─────────────────────────────────────────── */}
+            {loading && page === 1 && (
                 <div className="flex h-[60vh] items-center justify-center">
                     <div className="text-center space-y-4">
                         <div className="mx-auto w-6 h-6 border-2 border-stone-200 border-t-stone-900 rounded-full animate-spin" />
@@ -241,26 +256,14 @@ export default function Catalog() {
                 </div>
             )}
 
-            {/* ── Pagination ─────────────────────────────────────────────────────── */}
-            {totalPages > 1 && !loading && (
-                <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-14 flex items-center justify-center gap-1">
-                    <button
-                        onClick={() => setPage(p => Math.max(1, p - 1))}
-                        disabled={page <= 1}
-                        className="text-[11px] tracking-widest uppercase px-5 py-2.5 border border-stone-200 text-stone-600 hover:border-stone-900 hover:text-stone-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all font-medium"
-                    >
-                        ← Anterior
-                    </button>
-                    <span className="text-[11px] tracking-widest uppercase text-stone-400 px-6 font-medium">
-                        {page} / {totalPages}
-                    </span>
-                    <button
-                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                        disabled={page >= totalPages}
-                        className="text-[11px] tracking-widest uppercase px-5 py-2.5 border border-stone-200 text-stone-600 hover:border-stone-900 hover:text-stone-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all font-medium"
-                    >
-                        Siguiente →
-                    </button>
+            {/* ── Infinite Scroll Loader ──────────────────────────────────────────── */}
+            {page < totalPages && (
+                <div ref={loaderRef} className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex items-center justify-center">
+                    {loading && page > 1 ? (
+                        <div className="w-5 h-5 border-2 border-stone-200 border-t-stone-900 rounded-full animate-spin" />
+                    ) : (
+                        <div className="h-5 text-transparent">Scroll Trigger</div>
+                    )}
                 </div>
             )}
 
@@ -342,11 +345,11 @@ function CatalogCard({
                 <div className="relative w-full overflow-hidden bg-white" style={{ paddingBottom: isFeatured ? '100%' : '133.33%' }}>
                     {hasImage ? (
                         <>
-                            {/* Primary image */}
+                            {/* Primary image. LCP fix: eager load the first 8 images */}
                             <img
                                 src={product.images[0].url}
                                 alt={product.name}
-                                loading="lazy"
+                                loading={index < 8 ? "eager" : "lazy"}
                                 className={`absolute inset-0 w-full h-full object-cover object-center transition-all duration-700 ease-out group-hover:scale-[1.03] ${hasSecondImage ? 'group-hover:opacity-0' : ''}`}
                             />
                             {/* F2: Second-look image — crossfade on hover */}
@@ -354,7 +357,7 @@ function CatalogCard({
                                 <img
                                     src={product.images[1].url}
                                     alt={`${product.name} – vista lateral`}
-                                    loading="lazy"
+                                    loading={index < 8 ? "eager" : "lazy"}
                                     className="absolute inset-0 w-full h-full object-cover object-center opacity-0 group-hover:opacity-100 transition-all duration-700 ease-out group-hover:scale-[1.03]"
                                 />
                             )}

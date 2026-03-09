@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { SkeletonPage } from '../components/Skeleton';
 import { DocumentTextIcon, ChevronDownIcon, FunnelIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import { exportToCSV } from '../utils/export';
 import { getOrders, updateOrderStatus, PaginationInfo, Order } from '../services/order.service';
+import { createCheckoutSession } from '../services/payment.service';
 import { createInvoice, downloadInvoicePdf, downloadInvoiceXml, Invoice } from '../services/invoice.service';
 import { useAuth } from '../context/AuthContext';
 import Pagination from '../components/Pagination';
@@ -113,6 +115,17 @@ export default function Orders() {
         }
     };
 
+    const handleCheckout = async (orderId: string) => {
+        try {
+            const data = await createCheckoutSession(orderId);
+            if (data.url) {
+                window.location.href = data.url;
+            }
+        } catch (error: any) {
+            showToast(error.message || 'Error al conectar con la pasarela de pago.', 'error');
+        }
+    };
+
     const handleDownload = async (invoiceId: string, type: 'pdf' | 'xml', uuid?: string) => {
         try {
             if (type === 'pdf') {
@@ -139,26 +152,18 @@ export default function Orders() {
                 {orders.length > 0 && (
                     <button
                         onClick={() => {
-                            const headers = ['Pedido #', 'Cliente', 'Fecha', 'Estado', 'Subtotal', 'IVA', 'Total', 'Descuento', 'Código Promo'];
-                            const rows = orders.map(o => [
-                                o.orderNumber,
-                                o.customerName,
-                                o.date,
-                                statusLabels[o.status] || o.status,
-                                Number(o.subtotal).toFixed(2),
-                                Number((o as any).taxAmount || 0).toFixed(2),
-                                Number(o.total).toFixed(2),
-                                Number(o.discountAmount || 0).toFixed(2),
-                                o.promotionCode || ''
-                            ]);
-                            const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
-                            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = `pedidos_${new Date().toISOString().slice(0, 10)}.csv`;
-                            a.click();
-                            URL.revokeObjectURL(url);
+                            const dataToExport = orders.map(o => ({
+                                'Pedido #': o.orderNumber,
+                                'Cliente': o.customerName,
+                                'Fecha': o.date,
+                                'Estado': statusLabels[o.status] || o.status,
+                                'Subtotal': Number(o.subtotal).toFixed(2),
+                                'IVA': Number((o as any).taxAmount || 0).toFixed(2),
+                                'Total': Number(o.total).toFixed(2),
+                                'Descuento': Number(o.discountAmount || 0).toFixed(2),
+                                'Código Promo': o.promotionCode || ''
+                            }));
+                            exportToCSV(dataToExport, 'pedidos');
                         }}
                         className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all shadow-sm"
                     >
@@ -294,14 +299,33 @@ export default function Orders() {
                                                                 <button onClick={() => handleDownload(order.invoiceData!.id, 'pdf', order.invoiceData!.uuid)} className="text-indigo-600 hover:text-indigo-900 border border-indigo-200 rounded px-2 py-0.5 bg-indigo-50">PDF</button>
                                                                 <button onClick={() => handleDownload(order.invoiceData!.id, 'xml', order.invoiceData!.uuid)} className="text-blue-600 hover:text-blue-900 border border-blue-200 rounded px-2 py-0.5 bg-blue-50">XML</button>
                                                             </div>
+                                                            {!canChangeStatus && order.status === 'PENDING' && (
+                                                                <button onClick={() => handleCheckout(order.id)} className="w-full text-center bg-slate-900 text-white rounded px-2 py-1 mt-1 text-[10px] font-bold hover:bg-slate-800 transition-colors">
+                                                                    Pagar en Línea
+                                                                </button>
+                                                            )}
                                                         </div>
-                                                    ) : (
+                                                    ) : canChangeStatus ? (
                                                         <button
                                                             onClick={() => handleInvoiceClick(order.id)}
                                                             className="text-indigo-600 hover:text-indigo-900 font-medium"
                                                         >
-                                                            Facturar
+                                                            Timbrar Factura
                                                         </button>
+                                                    ) : (
+                                                        <div className="flex flex-col flex-wrap justify-end gap-2 items-end">
+                                                            <button
+                                                                onClick={() => showToast('Se ha notificado a tu proveedor para enviar la factura correspondiente.', 'success')}
+                                                                className="text-slate-500 hover:text-slate-800 font-medium text-xs border border-slate-300 rounded px-2 py-1 bg-white hover:bg-slate-50 transition-colors"
+                                                            >
+                                                                Solicitar Factura
+                                                            </button>
+                                                            {order.status === 'PENDING' && (
+                                                                <button onClick={() => handleCheckout(order.id)} className="bg-slate-900 text-white rounded px-3 py-1.5 text-xs font-bold hover:bg-slate-800 transition-colors shadow-sm w-full">
+                                                                    Pagar en Línea
+                                                                </button>
+                                                            )}
+                                                        </div>
                                                     )}
                                                 </td>
                                             </tr>
