@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useCart } from '../../context/CartContext'
 import { getProduct, getPublicCatalog, Product, ProductVariant } from '../../services/product.service'
 import { Toast } from '../../components/Toast'
 import B2BRevealModal from '../../components/B2BRevealModal'
 import { formatMXN } from '../../utils/format'
+import { ArrowLeftIcon, ShareIcon } from '@heroicons/react/24/outline'
 
 export default function ProductDetail() {
     const { id } = useParams<{ id: string }>()
@@ -17,358 +18,427 @@ export default function ProductDetail() {
     const [showModal, setShowModal] = useState(false)
     const [orderMatrix, setOrderMatrix] = useState<Record<string, number>>({})
     const [feedback, setFeedback] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null)
-
     const [selectedImageIndex, setSelectedImageIndex] = useState(0)
     const [showZoom, setShowZoom] = useState(false)
-    const [zoomScale, setZoomScale] = useState(1)
-
     const [uniqueSizes, setUniqueSizes] = useState<string[]>([])
     const [uniqueColors, setUniqueColors] = useState<string[]>([])
+    const [activeColor, setActiveColor] = useState<string>('')
+    const thumbRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
-        if (!id) return;
+        if (!id) return
         const companyId = searchParams.get('companyId') || import.meta.env.VITE_COMPANY_ID || 'demo'
 
         const hydrateProduct = (data: Product) => {
             setProduct(data)
-            const sizes = Array.from(new Set(data.variants.map((v: ProductVariant) => v.size))).sort()
-            const colors = Array.from(new Set(data.variants.map((v: ProductVariant) => v.color))).sort()
-            setUniqueSizes(sizes as string[])
-            setUniqueColors(colors as string[])
+            const sizes = Array.from(new Set(data.variants.map((v: ProductVariant) => v.size))).sort() as string[]
+            const colors = Array.from(new Set(data.variants.map((v: ProductVariant) => v.color))).sort() as string[]
+            setUniqueSizes(sizes)
+            setUniqueColors(colors)
+            if (colors.length > 0) setActiveColor(colors[0])
         }
 
         const fetchData = async () => {
             const token = localStorage.getItem('token')
-
             if (token) {
-                try {
-                    const data = await getProduct(id)
-                    hydrateProduct(data)
-                    setLoading(false)
-                    return
-                } catch {
-                    // fallback to public catalog
-                }
+                try { const data = await getProduct(id); hydrateProduct(data); setLoading(false); return } catch { /* fallback */ }
             }
-
             try {
                 const response = await getPublicCatalog(companyId)
                 const catalog: Product[] = response.products ? response.products : (Array.isArray(response) ? response : [])
                 const found = catalog.find((p: Product) => p.id === id)
-                if (found) {
-                    hydrateProduct(found)
-                } else {
-                    setFeedback({ message: 'Producto no encontrado en el catálogo.', type: 'error' })
-                }
+                if (found) hydrateProduct(found)
+                else setFeedback({ message: 'Producto no encontrado.', type: 'error' })
             } catch (err: unknown) {
-                const message = err instanceof Error ? err.message : 'Error desconocido';
-                setFeedback({ message: `No se pudo cargar el catálogo. ${message}`, type: 'error' })
-            } finally {
-                setLoading(false)
-            }
+                const message = err instanceof Error ? err.message : 'Error desconocido'
+                setFeedback({ message: `Error al cargar. ${message}`, type: 'error' })
+            } finally { setLoading(false) }
         }
-
         fetchData()
     }, [id, searchParams])
 
+    // Keyboard nav for zoom
+    useEffect(() => {
+        if (!showZoom || !product) return
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setShowZoom(false)
+            if (e.key === 'ArrowRight') setSelectedImageIndex(i => (i + 1) % product.images.length)
+            if (e.key === 'ArrowLeft') setSelectedImageIndex(i => (i - 1 + product.images.length) % product.images.length)
+        }
+        window.addEventListener('keydown', onKey)
+        return () => window.removeEventListener('keydown', onKey)
+    }, [showZoom, product])
+
+    // Scroll thumbnail into view
+    useEffect(() => {
+        const container = thumbRef.current
+        if (!container) return
+        const btn = container.children[selectedImageIndex] as HTMLElement
+        if (btn) btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+    }, [selectedImageIndex])
+
     const handleQuantityChange = (color: string, size: string, qty: number) => {
-        const key = `${color}-${size}`
         const variant = product?.variants.find(v => v.color === color && v.size === size)
-        if (!variant) { setFeedback({ message: 'Variante no disponible.', type: 'error' }); return; }
-        if (qty < 0) { setFeedback({ message: 'No puedes seleccionar cantidades negativas.', type: 'warning' }); setTimeout(() => setFeedback(null), 2000); return; }
-        if (qty > variant.stock) { setFeedback({ message: `Solo hay ${variant.stock} unidades disponibles en Talla ${size} Color ${color}`, type: 'warning' }); setTimeout(() => setFeedback(null), 3000); return; }
-        setFeedback(null);
-        setOrderMatrix(prev => ({ ...prev, [key]: qty }))
+        if (!variant) return
+        if (qty < 0) return
+        if (qty > variant.stock) {
+            setFeedback({ message: `Solo hay ${variant.stock} unidades (talla ${size}, ${color})`, type: 'warning' })
+            setTimeout(() => setFeedback(null), 2500)
+            return
+        }
+        setFeedback(null)
+        setOrderMatrix(prev => ({ ...prev, [`${color}-${size}`]: qty }))
     }
 
-    const getTotalPairs = () => Object.values(orderMatrix).reduce((acc, curr) => acc + curr, 0)
-    // @ts-ignore
-    const getPrice = () => product?.price || 0;
+    const getTotalPairs = () => Object.values(orderMatrix).reduce((a, b) => a + b, 0)
+    const getPrice = () => (product as Record<string, unknown> & { price?: number })?.price || 0
     const getTotalPrice = () => getTotalPairs() * getPrice()
 
-    const handleAddToOrder = (e: React.FormEvent) => {
+    const handleAddToOrder = (e: React.FormEvent | React.MouseEvent) => {
         e.preventDefault()
-        setFeedback(null);
-        let itemsAdded = 0;
+        setFeedback(null)
+        let added = 0
         Object.entries(orderMatrix).forEach(([key, qty]) => {
             if (qty > 0) {
                 const [color, size] = key.split('-')
-                const variant = product?.variants.find(v => v.size === size && v.color === color);
+                const variant = product?.variants.find(v => v.size === size && v.color === color)
                 if (variant) {
-                    addToCart({ productId: product!.id, variantId: variant.id, name: product!.name, price: getPrice(), image: product!.images?.[0]?.url || '', size, color, quantity: qty, subtotal: qty * getPrice() })
-                    itemsAdded++
+                    addToCart({ productId: product!.id, variantId: variant.id!, name: product!.name, price: getPrice(), image: product!.images?.[0]?.url || '', size, color, quantity: qty, subtotal: qty * getPrice() })
+                    added++
                 }
             }
         })
-        if (itemsAdded > 0) {
-            setFeedback({ message: `¡${itemsAdded} producto(s) agregado(s) al carrito!`, type: 'success' });
-            setTimeout(() => { setFeedback(null); navigate('/cart'); }, 1500);
+        if (added > 0) {
+            setFeedback({ message: `¡${added} variante(s) agregada(s) al carrito!`, type: 'success' })
+            setTimeout(() => { setFeedback(null); navigate('/cart') }, 1500)
         } else {
-            setFeedback({ message: 'Por favor selecciona al menos un par.', type: 'warning' });
-            setTimeout(() => setFeedback(null), 2000);
+            setFeedback({ message: 'Selecciona al menos un par para continuar.', type: 'warning' })
+            setTimeout(() => setFeedback(null), 2000)
         }
     }
 
-    const handleNextImage = () => { if (product && product.images.length > 0) setSelectedImageIndex((prev) => (prev + 1) % product.images.length) }
-    const handlePrevImage = () => { if (product && product.images.length > 0) setSelectedImageIndex((prev) => (prev - 1 + product.images.length) % product.images.length) }
-
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (!showZoom) return
-            if (e.key === 'Escape') { setShowZoom(false); setZoomScale(1); }
-            else if (e.key === 'ArrowRight') handleNextImage()
-            else if (e.key === 'ArrowLeft') handlePrevImage()
-            else if (e.key === '+' || e.key === '=') setZoomScale(s => Math.min(s + 0.5, 3))
-            else if (e.key === '-') setZoomScale(s => Math.max(s - 0.5, 1))
-        }
-        window.addEventListener('keydown', handleKeyDown)
-        return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [showZoom, product])
-
+    /* ── Loading ─────────────────────────────────────────────────────── */
     if (loading) return (
         <div className="flex h-[80vh] items-center justify-center">
-            <div className="text-center space-y-3">
-                <div className="animate-spin rounded-full h-10 w-10 border-2 border-slate-200 border-t-brand-500 mx-auto"></div>
-                <p className="text-sm text-slate-500 font-medium">Cargando producto...</p>
+            <div className="w-6 h-6 border-2 border-stone-200 border-t-stone-900 rounded-full animate-spin" />
+        </div>
+    )
+
+    if (!product) return (
+        <div className="flex h-[80vh] items-center justify-center p-6">
+            <div className="text-center space-y-4">
+                <p className="text-[11px] tracking-widest uppercase text-stone-400">Producto no encontrado</p>
+                <button onClick={() => navigate(-1)} className="text-xs tracking-widest uppercase border-b border-stone-400 text-stone-500 hover:text-stone-900 hover:border-stone-900 transition-colors pb-px">
+                    Volver al catálogo
+                </button>
             </div>
         </div>
     )
 
-    if (!product) {
-        return (
-            <div className="flex h-[80vh] items-center justify-center p-6">
-                <div className="text-center space-y-4 max-w-md">
-                    <div className="mx-auto w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
-                        <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                    </div>
-                    <h2 className="text-xl font-bold text-slate-900">Producto no encontrado</h2>
-                    <p className="text-sm text-slate-500">No pudimos localizar este producto en el catálogo.</p>
-                    <button onClick={() => navigate('/')} className="mt-4 px-6 py-2.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm transition-colors">
-                        Volver al catálogo
-                    </button>
-                </div>
-            </div>
-        )
-    }
-
-    const isBestSeller = product.tags?.includes('best-seller');
-    const isOutOfStock = product.variants.every(v => v.stock === 0);
-    const shareUrl = window.location.origin + '/product/' + product.id;
     const totalPairs = getTotalPairs()
     const totalPrice = getTotalPrice()
+    const isOutOfStock = product.variants.every(v => v.stock === 0)
+    const companyId = searchParams.get('companyId') || import.meta.env.VITE_COMPANY_ID || 'demo'
 
+    /* ── Render ──────────────────────────────────────────────────────── */
     return (
-        <div className="min-h-screen bg-white">
+        <div className="min-h-screen bg-white pb-28 lg:pb-0">
             {feedback && <Toast message={feedback.message} type={feedback.type} onClose={() => setFeedback(null)} />}
 
-            {/* Zoom Modal */}
+            {/* ── Zoom Modal ─────────────────────────────────────────── */}
             {showZoom && product.images?.length > 0 && (
-                <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4" onClick={() => { setShowZoom(false); setZoomScale(1); }}>
-                    <button onClick={() => { setShowZoom(false); setZoomScale(1); }} className="absolute top-4 right-4 z-10 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all" title="Cerrar (ESC)">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                <div
+                    className="fixed inset-0 z-50 bg-black flex items-center justify-center"
+                    onClick={() => setShowZoom(false)}
+                >
+                    <button className="absolute top-5 right-5 z-10 text-white/60 hover:text-white p-3" onClick={() => setShowZoom(false)}>
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                     {product.images.length > 1 && (
                         <>
-                            <button onClick={(e) => { e.stopPropagation(); handlePrevImage(); }} className="absolute left-4 z-10 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all">
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                            <button onClick={(e) => { e.stopPropagation(); setSelectedImageIndex(i => (i - 1 + product.images.length) % product.images.length) }}
+                                className="absolute left-4 top-1/2 -translate-y-1/2 p-3 text-white/50 hover:text-white z-10">
+                                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" /></svg>
                             </button>
-                            <button onClick={(e) => { e.stopPropagation(); handleNextImage(); }} className="absolute right-4 z-10 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all">
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                            <button onClick={(e) => { e.stopPropagation(); setSelectedImageIndex(i => (i + 1) % product.images.length) }}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 p-3 text-white/50 hover:text-white z-10">
+                                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" /></svg>
                             </button>
                         </>
                     )}
-                    <div className="relative max-w-5xl max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
-                        <img src={product.images[selectedImageIndex].url} alt={`${product.name} - Vista ${selectedImageIndex + 1}`} className="max-w-full max-h-[90vh] object-contain transition-transform duration-300" style={{ transform: `scale(${zoomScale})` }} />
-                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 bg-black/60 rounded-full px-4 py-2">
-                            <button onClick={() => setZoomScale(s => Math.max(s - 0.5, 1))} disabled={zoomScale <= 1} className="p-2 rounded-full hover:bg-white/10 disabled:opacity-30 text-white transition-all">
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg>
-                            </button>
-                            <span className="px-3 py-2 text-white font-semibold min-w-[60px] text-center">{Math.round(zoomScale * 100)}%</span>
-                            <button onClick={() => setZoomScale(s => Math.min(s + 0.5, 3))} disabled={zoomScale >= 3} className="p-2 rounded-full hover:bg-white/10 disabled:opacity-30 text-white transition-all">
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                            </button>
-                        </div>
-                        {product.images.length > 1 && (
-                            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/60 rounded-full px-4 py-2 text-white text-sm font-semibold">
-                                {selectedImageIndex + 1} / {product.images.length}
-                            </div>
-                        )}
-                    </div>
+                    <img
+                        src={product.images[selectedImageIndex].url}
+                        alt={product.name}
+                        className="max-h-[92vh] max-w-[96vw] object-contain"
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                    {product.images.length > 1 && (
+                        <span className="absolute bottom-6 left-1/2 -translate-x-1/2 text-[11px] tracking-widest uppercase text-white/40">
+                            {selectedImageIndex + 1} / {product.images.length}
+                        </span>
+                    )}
                 </div>
             )}
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
-                <div className="grid lg:grid-cols-5 gap-8 lg:gap-12">
-                    {/* Gallery */}
-                    <div className="lg:col-span-3 space-y-4">
-                        <div className="relative group overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
-                            {product.images?.length > 0 ? (
-                                <>
-                                    <img src={product.images[selectedImageIndex].url} alt={`${product.name} - Vista ${selectedImageIndex + 1}`} className="w-full h-[340px] sm:h-[420px] lg:h-[520px] object-cover object-center transition-all duration-500" />
-                                    <button onClick={() => { setShowZoom(true); setZoomScale(1); }} className="absolute top-4 right-4 p-2.5 rounded-xl bg-white/90 hover:bg-white text-slate-600 opacity-0 group-hover:opacity-100 transition-all shadow-sm" title="Ver en grande">
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg>
-                                    </button>
-                                    {product.images.length > 1 && (
-                                        <>
-                                            <button onClick={handlePrevImage} className="absolute left-4 top-1/2 -translate-y-1/2 p-2.5 rounded-xl bg-white/90 hover:bg-white text-slate-600 opacity-0 group-hover:opacity-100 transition-all shadow-sm">
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-                                            </button>
-                                            <button onClick={handleNextImage} className="absolute right-4 top-1/2 -translate-y-1/2 p-2.5 rounded-xl bg-white/90 hover:bg-white text-slate-600 opacity-0 group-hover:opacity-100 transition-all shadow-sm">
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                                            </button>
-                                            <div className="absolute bottom-4 right-4 px-3 py-1.5 rounded-full bg-black/50 text-white text-sm font-medium">
-                                                {selectedImageIndex + 1} / {product.images.length}
-                                            </div>
-                                        </>
-                                    )}
-                                </>
-                            ) : (
-                                <div className="h-[340px] sm:h-[420px] lg:h-[520px] flex items-center justify-center text-slate-300">
-                                    <div className="text-center space-y-2">
-                                        <svg className="w-16 h-16 mx-auto opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                                        <p className="text-sm">Sin imagen disponible</p>
+            {/* ── Slim Top Bar ───────────────────────────────────────── */}
+            <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-stone-100 flex items-center justify-between px-4 sm:px-8 h-12">
+                <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-stone-500 hover:text-stone-900 transition-colors">
+                    <ArrowLeftIcon className="h-4 w-4" />
+                    <span className="text-[11px] tracking-widest uppercase hidden sm:inline">Catálogo</span>
+                </button>
+                <p className="text-[11px] tracking-[0.2em] uppercase font-semibold text-stone-500 truncate max-w-[50%] text-center">{product.name}</p>
+                <button
+                    onClick={() => navigator.share ? navigator.share({ title: product.name, url: window.location.href }) : navigator.clipboard.writeText(window.location.href)}
+                    className="p-1.5 text-stone-400 hover:text-stone-900 transition-colors"
+                    aria-label="Compartir"
+                >
+                    <ShareIcon className="h-4 w-4" />
+                </button>
+            </div>
+
+            {/* ── Main layout: stacked mobile / side-by-side desktop ── */}
+            <div className="max-w-screen-xl mx-auto lg:grid lg:grid-cols-2 lg:gap-0 lg:min-h-[90vh]">
+
+                {/* ── LEFT: Gallery ─────────────────────────────────── */}
+                <div className="relative">
+                    {/* Main image */}
+                    <div
+                        className="relative w-full overflow-hidden bg-stone-100 cursor-zoom-in"
+                        style={{ paddingBottom: '125%' }}
+                        onClick={() => product.images?.length > 0 && setShowZoom(true)}
+                    >
+                        {product.images?.length > 0 ? (
+                            <img
+                                key={selectedImageIndex}
+                                src={product.images[selectedImageIndex].url}
+                                alt={`${product.name} – ${selectedImageIndex + 1}`}
+                                className="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-300"
+                            />
+                        ) : (
+                            <div className="absolute inset-0 flex items-center justify-center text-stone-300">
+                                <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                            </div>
+                        )}
+                        {product.images?.length > 1 && (
+                            <>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setSelectedImageIndex(i => (i - 1 + product.images.length) % product.images.length) }}
+                                    className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center bg-white/80 hover:bg-white transition-colors shadow-sm"
+                                >
+                                    <svg className="w-4 h-4 text-stone-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                                </button>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setSelectedImageIndex(i => (i + 1) % product.images.length) }}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center bg-white/80 hover:bg-white transition-colors shadow-sm"
+                                >
+                                    <svg className="w-4 h-4 text-stone-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                                </button>
+                                <span className="absolute bottom-4 right-4 text-[10px] tracking-widest text-white uppercase bg-black/40 px-2.5 py-1">
+                                    {selectedImageIndex + 1} / {product.images.length}
+                                </span>
+                            </>
+                        )}
+                    </div>
+
+                    {/* Thumbnails — horizontal scroll strip */}
+                    {product.images?.length > 1 && (
+                        <div ref={thumbRef} className="flex gap-1.5 p-3 overflow-x-auto no-scrollbar border-b border-stone-100">
+                            {product.images.map((img, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={() => setSelectedImageIndex(idx)}
+                                    className={`flex-shrink-0 w-16 h-20 overflow-hidden transition-all duration-200 ${idx === selectedImageIndex ? 'ring-2 ring-stone-900 ring-offset-1' : 'opacity-50 hover:opacity-80'}`}
+                                >
+                                    <img src={img.url} alt="" className="w-full h-full object-cover" />
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* ── RIGHT: Product Info + Order ────────────────────── */}
+                <div className="lg:overflow-y-auto lg:h-screen lg:sticky lg:top-0 px-5 sm:px-8 lg:px-12 py-8 space-y-8">
+
+                    {/* Header */}
+                    <div className="space-y-2 border-b border-stone-100 pb-6">
+                        {product.category && (
+                            <p className="text-[10px] tracking-[0.25em] uppercase text-stone-400 font-semibold">{product.category}</p>
+                        )}
+                        <h1 className="text-xl sm:text-2xl font-semibold text-stone-900 leading-snug">{product.name}</h1>
+                        <p className="text-xs text-stone-400 tracking-widest uppercase">SKU: {product.sku || 'N/A'}</p>
+
+                        {/* Price */}
+                        <div className="pt-2">
+                            {isB2BUnlocked ? (
+                                getPrice() > 0 ? (
+                                    <div className="flex items-baseline gap-2">
+                                        <p className="text-2xl font-semibold text-stone-900">{formatMXN(getPrice())}</p>
+                                        <span className="text-xs tracking-widest uppercase text-stone-400">/ par</span>
                                     </div>
+                                ) : (
+                                    <p className="text-sm text-stone-400 italic">Precio a consultar</p>
+                                )
+                            ) : (
+                                <button
+                                    onClick={() => setShowModal(true)}
+                                    className="mt-1 inline-flex items-center gap-2 bg-stone-900 text-white text-xs tracking-widest uppercase px-6 py-3 hover:bg-stone-700 transition-colors font-medium"
+                                >
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                                    Desbloquear precios
+                                </button>
+                            )}
+                        </div>
+                        {isOutOfStock && (
+                            <p className="text-[11px] tracking-widest uppercase text-red-500 font-semibold pt-1">Sin existencias</p>
+                        )}
+                    </div>
+
+                    {/* Description */}
+                    {product.description && (
+                        <p className="text-sm text-stone-500 leading-relaxed">{product.description}</p>
+                    )}
+
+                    {/* ── Order matrix ─────────────────────────────── */}
+                    <div className="space-y-5">
+                        <div className="flex items-center justify-between">
+                            <p className="text-[10px] tracking-[0.2em] uppercase text-stone-400 font-semibold">Seleccionar pares</p>
+                            {totalPairs > 0 && (
+                                <div className="text-right">
+                                    <p className="text-xs text-stone-500">{totalPairs} {totalPairs === 1 ? 'par' : 'pares'}</p>
+                                    {isB2BUnlocked && totalPrice > 0 && (
+                                        <p className="text-sm font-semibold text-stone-900">{formatMXN(totalPrice)}</p>
+                                    )}
                                 </div>
                             )}
                         </div>
 
-                        {/* Thumbnails */}
-                        {product.images?.length > 1 && (
-                            <div className="flex gap-3 overflow-x-auto pb-2">
-                                {product.images.map((img, idx) => (
-                                    <button key={idx} onClick={() => setSelectedImageIndex(idx)}
-                                        className={`flex-shrink-0 w-20 h-20 overflow-hidden rounded-xl transition-all duration-200 border-2 ${idx === selectedImageIndex ? 'border-brand-500 ring-2 ring-brand-200' : 'border-slate-200 hover:border-slate-300 opacity-70 hover:opacity-100'}`}>
-                                        <img src={img.url} alt={`Vista ${idx + 1}`} className="w-full h-full object-cover" />
+                        {/* Color tabs */}
+                        {uniqueColors.length > 1 && (
+                            <div className="flex gap-2 flex-wrap">
+                                {uniqueColors.map(color => (
+                                    <button
+                                        key={color}
+                                        onClick={() => setActiveColor(color)}
+                                        className={`text-[11px] tracking-widest uppercase px-4 py-2 border transition-all ${activeColor === color ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-500 border-stone-200 hover:border-stone-500 hover:text-stone-800'}`}
+                                    >
+                                        {color}
                                     </button>
                                 ))}
                             </div>
                         )}
+                        {uniqueColors.length === 1 && (
+                            <p className="text-sm text-stone-700 font-medium">{uniqueColors[0]}</p>
+                        )}
+
+                        {/* Size grid — only for active color */}
+                        {(activeColor ? [activeColor] : uniqueColors).map(color => (
+                            <div key={color} className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                                {uniqueSizes.map(size => {
+                                    const key = `${color}-${size}`
+                                    const variant = product.variants.find(v => v.color === color && v.size === size)
+                                    const disabled = !variant || variant.stock === 0
+                                    return (
+                                        <div
+                                            key={key}
+                                            className={`relative border flex flex-col items-center gap-1.5 p-2.5 transition-all ${disabled ? 'border-stone-100 bg-stone-50 text-stone-300' : 'border-stone-200 bg-white hover:border-stone-700'}`}
+                                        >
+                                            <span className={`text-xs font-semibold tracking-wide ${disabled ? 'text-stone-300' : 'text-stone-900'}`}>{size}</span>
+                                            {disabled ? (
+                                                <span className="text-[9px] tracking-widest uppercase text-stone-300">N/D</span>
+                                            ) : (
+                                                <>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        max={variant!.stock}
+                                                        placeholder="0"
+                                                        value={orderMatrix[key] || ''}
+                                                        onChange={(e) => handleQuantityChange(color, size, parseInt(e.target.value) || 0)}
+                                                        className="w-full text-center text-sm font-semibold border-0 bg-transparent focus:outline-none focus:ring-0 text-stone-900 placeholder:text-stone-300"
+                                                    />
+                                                    <span className="text-[9px] tracking-wider text-stone-300">{variant!.stock} disp.</span>
+                                                </>
+                                            )}
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        ))}
+
+                        {/* Desktop CTA */}
+                        <div className="hidden lg:block pt-2">
+                            {isB2BUnlocked ? (
+                                <button
+                                    onClick={handleAddToOrder}
+                                    disabled={totalPairs === 0}
+                                    className="w-full py-4 text-[11px] tracking-[0.2em] uppercase font-semibold transition-all disabled:bg-stone-100 disabled:text-stone-400 disabled:cursor-not-allowed bg-stone-900 text-white hover:bg-stone-700"
+                                >
+                                    {totalPairs === 0 ? 'Selecciona pares para continuar' : `Agregar ${totalPairs} par${totalPairs > 1 ? 'es' : ''} al pedido`}
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => setShowModal(true)}
+                                    className="w-full py-4 text-[11px] tracking-[0.2em] uppercase font-semibold bg-stone-900 text-white hover:bg-stone-700 transition-all"
+                                >
+                                    Iniciar sesión para comprar
+                                </button>
+                            )}
+                        </div>
                     </div>
 
-                    {/* Product Info + Order */}
-                    <div className="lg:col-span-2 space-y-6">
-                        {/* Info Card */}
-                        <div className="bg-white rounded-2xl border border-slate-200 p-6">
-                            <div className="flex items-start justify-between gap-4 mb-4">
-                                <div>
-                                    <p className="text-xs uppercase tracking-widest text-brand-500 font-semibold">{product.category || 'Producto'}</p>
-                                    <h1 className="text-2xl font-display font-bold text-slate-900 leading-tight mt-1">{product.name}</h1>
-                                    <p className="text-sm text-slate-400 font-medium mt-1">SKU: {product.sku || 'N/A'}</p>
-                                </div>
-                                <div className="flex flex-col items-end gap-2">
-                                    {isBestSeller && <span className="px-3 py-1 rounded-full bg-brand-50 text-brand-600 text-xs font-bold">Más vendido</span>}
-                                    {isOutOfStock && <span className="px-3 py-1 rounded-full bg-red-50 text-red-600 text-xs font-bold">Sin stock</span>}
-                                </div>
-                            </div>
-                            <p className="text-sm text-slate-600 leading-relaxed">{product.description || 'Producto de calidad premium para mayoristas.'}</p>
-
-                            {/* Price */}
-                            <div className="mt-6 p-4 rounded-xl border border-slate-200 bg-slate-50">
-                                <p className="text-xs text-slate-500 font-medium mb-1">Precio mayorista</p>
-                                {isB2BUnlocked ? (
-                                    <p className="text-3xl font-display font-bold text-slate-900">
-                                        {getPrice() ? formatMXN(getPrice()) : 'Precio a consultar'}
-                                    </p>
-                                ) : (
-                                    <button onClick={() => setShowModal(true)} className="mt-1 bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 rounded-lg font-semibold text-sm shadow-sm transition-all">
-                                        Ver Precio Mayorista
-                                    </button>
-                                )}
-                            </div>
-
-                            {/* Actions */}
-                            <div className="mt-5 flex flex-wrap gap-3">
-                                <button className="inline-flex items-center gap-2 rounded-lg bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-200 transition-colors"
-                                    onClick={() => navigator.share ? navigator.share({ title: product.name, url: shareUrl }) : navigator.clipboard.writeText(shareUrl)}>
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" /></svg>
-                                    Compartir
-                                </button>
-                                <button className="inline-flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-2.5 text-sm font-semibold text-green-700 hover:bg-green-100 transition-colors"
-                                    onClick={() => { const msg = encodeURIComponent(`Hola, quiero cotizar el modelo ${product.name} (SKU ${product.sku || 'N/A'}).`); window.open(`https://wa.me/?text=${msg}`, '_blank'); }}>
-                                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" /></svg>
-                                    Cotizar por WhatsApp
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Order Matrix */}
-                        <div className="bg-white rounded-2xl border border-slate-200 p-6">
-                            <div className="flex items-center justify-between mb-5">
-                                <div>
-                                    <p className="text-xs uppercase tracking-wider text-slate-400 font-semibold">Pedido por talla y color</p>
-                                    <p className="text-lg font-display font-bold text-slate-900">Selecciona pares</p>
-                                </div>
-                                <div className="text-right text-sm font-medium text-slate-600">
-                                    <div>Total pares: <span className="font-bold text-slate-900">{totalPairs}</span></div>
-                                    {isB2BUnlocked && <div>Total: <span className="font-bold text-brand-600">{formatMXN(totalPrice)}</span></div>}
-                                </div>
-                            </div>
-
-                            <form className="space-y-4" onSubmit={handleAddToOrder}>
-                                {uniqueColors.map((color) => (
-                                    <div key={color} className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-sm font-bold text-slate-800">{color}</span>
-                                            <span className="text-xs text-slate-400">Stock por talla</span>
-                                        </div>
-                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                                            {uniqueSizes.map((size) => {
-                                                const key = `${color}-${size}`
-                                                const variant = product.variants.find(v => v.color === color && v.size === size)
-                                                if (!variant) return <div key={key} className="rounded-lg border border-slate-200 bg-white text-center py-2 text-xs text-slate-300">{size}</div>
-                                                const disabled = variant.stock === 0;
-                                                return (
-                                                    <div key={key} className={`rounded-lg border px-2 py-2 flex flex-col gap-1 text-center transition-all ${disabled ? 'border-red-200 bg-red-50 text-red-400' : 'border-slate-200 bg-white text-slate-700 hover:border-brand-300'}`}>
-                                                        <span className="text-sm font-bold">{size}</span>
-                                                        {disabled ? (
-                                                            <span className="text-[11px] font-semibold">Agotado</span>
-                                                        ) : (
-                                                            <input type="number" min="0" max={variant.stock} placeholder="0"
-                                                                className="w-full rounded-md bg-slate-50 text-center text-sm font-semibold focus:ring-brand-500 focus:border-brand-500 border-slate-200"
-                                                                value={orderMatrix[key] || ''}
-                                                                onChange={(e) => handleQuantityChange(color, size, parseInt(e.target.value) || 0)} />
-                                                        )}
-                                                        {!disabled && <span className="text-[10px] text-slate-400">Disp: {variant.stock}</span>}
-                                                    </div>
-                                                )
-                                            })}
-                                        </div>
-                                    </div>
-                                ))}
-
-                                {isB2BUnlocked ? (
-                                    <button type="submit" disabled={totalPairs === 0}
-                                        className="w-full rounded-xl bg-brand-500 text-white font-bold py-3.5 text-sm shadow-sm hover:bg-brand-600 transition-all disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed">
-                                        Agregar al pedido
-                                    </button>
-                                ) : (
-                                    <button type="button" onClick={() => setShowModal(true)}
-                                        className="w-full rounded-xl bg-slate-100 text-slate-600 font-bold py-3.5 text-sm hover:bg-slate-200 transition-all border border-slate-200">
-                                        Ingresa para Comprar
-                                    </button>
-                                )}
-                            </form>
-                        </div>
+                    {/* WhatsApp CTA */}
+                    <div className="border-t border-stone-100 pt-6">
+                        <button
+                            onClick={() => { const msg = encodeURIComponent(`Hola, quiero cotizar el modelo ${product.name} (SKU: ${product.sku || 'N/A'}).`); window.open(`https://wa.me/?text=${msg}`, '_blank') }}
+                            className="w-full flex items-center justify-center gap-2.5 border border-stone-200 py-3 text-[11px] tracking-widest uppercase text-stone-600 hover:border-stone-900 hover:text-stone-900 transition-all font-medium"
+                        >
+                            <svg className="w-4 h-4 text-[#25D366]" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" /></svg>
+                            Cotizar por WhatsApp
+                        </button>
                     </div>
                 </div>
             </div>
 
-            {/* Mobile sticky bar */}
-            <div className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-sm border-t border-slate-200 p-4 shadow-lg">
-                <div className="flex items-center justify-between">
-                    <div className="text-sm font-medium text-slate-700">
-                        <div>{totalPairs} pares</div>
-                        {isB2BUnlocked && <div className="font-bold text-brand-600">{formatMXN(totalPrice)}</div>}
+            {/* ── Mobile Sticky CTA ──────────────────────────────────── */}
+            <div className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-stone-200 p-4 shadow-2xl shadow-black/10">
+                <div className="flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                        {totalPairs > 0 ? (
+                            <div>
+                                <p className="text-xs font-semibold text-stone-900">{totalPairs} par{totalPairs > 1 ? 'es' : ''} seleccionado{totalPairs > 1 ? 's' : ''}</p>
+                                {isB2BUnlocked && totalPrice > 0 && <p className="text-xs text-stone-400">{formatMXN(totalPrice)}</p>}
+                            </div>
+                        ) : (
+                            <p className="text-xs text-stone-400 truncate">{product.name}</p>
+                        )}
                     </div>
-                    <button onClick={(e) => handleAddToOrder(e as React.FormEvent)} disabled={totalPairs === 0}
-                        className="rounded-xl bg-brand-500 text-white font-bold px-6 py-3 text-sm shadow-sm hover:bg-brand-600 transition-all disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed">
-                        Agregar
-                    </button>
+                    {isB2BUnlocked ? (
+                        <button
+                            onClick={handleAddToOrder}
+                            disabled={totalPairs === 0}
+                            className="text-[11px] tracking-widest uppercase font-semibold px-6 py-3 bg-stone-900 text-white hover:bg-stone-700 transition-all disabled:bg-stone-100 disabled:text-stone-400 disabled:cursor-not-allowed flex-shrink-0"
+                        >
+                            {totalPairs === 0 ? 'Seleccionar' : 'Agregar al pedido'}
+                        </button>
+                    ) : (
+                        <button
+                            onClick={() => setShowModal(true)}
+                            className="text-[11px] tracking-widest uppercase font-semibold px-6 py-3 bg-stone-900 text-white hover:bg-stone-700 transition-all flex-shrink-0"
+                        >
+                            Desbloquear precios
+                        </button>
+                    )}
                 </div>
             </div>
 
-            <B2BRevealModal isOpen={showModal} onClose={() => setShowModal(false)} onSuccess={(lead) => { unlockB2B(lead); setShowModal(false); }}
-                companyId={searchParams.get('companyId') || import.meta.env.VITE_COMPANY_ID || 'demo'} />
+            <B2BRevealModal
+                isOpen={showModal}
+                onClose={() => setShowModal(false)}
+                onSuccess={(lead) => { unlockB2B(lead); setShowModal(false) }}
+                companyId={companyId}
+            />
+
+            <style>{`.no-scrollbar::-webkit-scrollbar{display:none;}.no-scrollbar{-ms-overflow-style:none;scrollbar-width:none;}`}</style>
         </div>
     )
 }

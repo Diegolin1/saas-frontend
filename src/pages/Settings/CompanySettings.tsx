@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getSettings, updateSettings, CompanySettings } from '../../services/settings.service';
 import { getErrorMessage } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
-import { BuildingOffice2Icon, PhoneIcon, MapPinIcon, TagIcon } from '@heroicons/react/24/outline';
+import { BuildingOffice2Icon, PhoneIcon, MapPinIcon, TagIcon, PhotoIcon } from '@heroicons/react/24/outline';
+import { uploadLogo } from '../../services/upload.service';
 
 const MEXICAN_STATES = [
     'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas',
@@ -24,6 +25,9 @@ export default function CompanySettingsPage() {
     const [state, setState] = useState('');
     const [currency, setCurrency] = useState('MXN');
     const [categoriesText, setCategoriesText] = useState('');
+    const [logoUrl, setLogoUrl] = useState('');
+    const [uploadingLogo, setUploadingLogo] = useState(false);
+    const logoInputRef = useRef<HTMLInputElement>(null);
 
     // Address fields
     const [street, setStreet] = useState('');
@@ -48,6 +52,7 @@ export default function CompanySettingsPage() {
             setState(s.state || '');
             setCurrency(s.currency || 'MXN');
             setCategoriesText((s.categories || []).join(', '));
+            setLogoUrl(s.logoUrl || '');
 
             const addr = data.address || {};
             setStreet(addr.street || '');
@@ -86,6 +91,7 @@ export default function CompanySettingsPage() {
                 },
                 settings: {
                     whatsappPhone: whatsappPhone.trim(),
+                    logoUrl: logoUrl || undefined,
                     city: city.trim(),
                     state,
                     currency,
@@ -111,6 +117,73 @@ export default function CompanySettingsPage() {
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Logo */}
+            <div className="bg-white shadow rounded-lg">
+                <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
+                    <div className="flex items-center gap-3">
+                        <PhotoIcon className="h-5 w-5 text-brand-500" />
+                        <h3 className="text-base font-semibold text-gray-900">Logo de la Empresa</h3>
+                    </div>
+                    <p className="mt-1 text-sm text-gray-500">Aparece en el catálogo público y las notificaciones.</p>
+                </div>
+                <div className="px-4 py-5 sm:p-6">
+                    <div className="flex items-center gap-6">
+                        {/* Preview */}
+                        <div className="flex-shrink-0 h-24 w-24 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden">
+                            {logoUrl ? (
+                                <img src={logoUrl} alt="Logo" className="h-full w-full object-contain p-1" />
+                            ) : (
+                                <PhotoIcon className="h-10 w-10 text-gray-300" />
+                            )}
+                        </div>
+                        <div className="space-y-2">
+                            <button
+                                type="button"
+                                disabled={uploadingLogo}
+                                onClick={() => logoInputRef.current?.click()}
+                                className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                            >
+                                {uploadingLogo ? (
+                                    <><div className="h-4 w-4 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />Subiendo...</>
+                                ) : (
+                                    <><PhotoIcon className="h-4 w-4" />Cambiar logo</>
+                                )}
+                            </button>
+                            {logoUrl && (
+                                <button
+                                    type="button"
+                                    onClick={() => setLogoUrl('')}
+                                    className="block text-xs text-red-500 hover:text-red-700"
+                                >
+                                    Quitar logo
+                                </button>
+                            )}
+                            <p className="text-xs text-gray-400">JPG, PNG o WEBP · Máx. 5 MB</p>
+                        </div>
+                    </div>
+                    <input
+                        ref={logoInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="sr-only"
+                        onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            setUploadingLogo(true);
+                            try {
+                                const url = await uploadLogo(file);
+                                setLogoUrl(url);
+                                showToast('Logo actualizado. Guarda la configuración para aplicar cambios.', 'success');
+                            } catch (err) {
+                                showToast(getErrorMessage(err, 'Error al subir el logo.'), 'error');
+                            } finally {
+                                setUploadingLogo(false);
+                                e.target.value = '';
+                            }
+                        }}
+                    />
+                </div>
+            </div>
             {/* Company Info */}
             <div className="bg-white shadow rounded-lg">
                 <div className="px-4 py-5 sm:px-6 border-b border-gray-200">

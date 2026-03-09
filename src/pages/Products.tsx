@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { SkeletonPage } from '../components/Skeleton';
 import { Link } from 'react-router-dom';
-import { getProducts, deleteProduct, Product, PaginationInfo } from '../services/product.service';
-import { PlusIcon, PencilSquareIcon, TrashIcon, StarIcon, ExclamationTriangleIcon, ShareIcon } from '@heroicons/react/24/outline';
+import { getProducts, deleteProduct, importProductsCsv, Product, PaginationInfo } from '../services/product.service';
+import { PlusIcon, PencilSquareIcon, TrashIcon, StarIcon, ExclamationTriangleIcon, ShareIcon, ArrowUpTrayIcon } from '@heroicons/react/24/outline';
 import Pagination from '../components/Pagination';
 import { useToast } from '../context/ToastContext';
+import { Dialog } from '@headlessui/react';
 
 export default function Products() {
     const { showToast } = useToast();
@@ -13,6 +15,9 @@ export default function Products() {
     const [pagination, setPagination] = useState<PaginationInfo | null>(null);
     const [search, setSearch] = useState('');
     const [searchDebounce, setSearchDebounce] = useState('');
+    const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+    const [importing, setImporting] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Debounce search
     useEffect(() => {
@@ -41,18 +46,37 @@ export default function Products() {
     }, [page, searchDebounce]);
 
     const handleDelete = async (id: string) => {
-        if (window.confirm('¿Estás seguro de eliminar este producto?')) {
-            try {
-                await deleteProduct(id);
-                showToast('Producto eliminado correctamente', 'success');
-                fetchProducts();
-            } catch (error) {
-                showToast('Error al eliminar el producto', 'error');
+        try {
+            await deleteProduct(id);
+            showToast('Producto eliminado correctamente', 'success');
+            fetchProducts();
+        } catch (error) {
+            showToast('Error al eliminar el producto', 'error');
+        } finally {
+            setConfirmDelete(null);
+        }
+    };
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            setImporting(true);
+            const response = await importProductsCsv(file);
+            showToast(response.message || 'CSV importado exitosamente', 'success');
+            fetchProducts(); // refresh catalog
+        } catch (error: any) {
+            showToast(error.response?.data?.error || 'Error al importar CSV', 'error');
+        } finally {
+            setImporting(false);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = ''; // clear input
             }
         }
     };
 
-    if (loading) return <div className="p-8 text-center text-brand-400">Cargando inventario...</div>;
+    if (loading) return <SkeletonPage />;
 
     return (
         <div className="px-4 sm:px-6 lg:px-8 py-8 min-h-screen">
@@ -60,9 +84,24 @@ export default function Products() {
                 <div className="sm:flex sm:items-center sm:justify-between mb-8">
                     <div className="sm:flex-auto">
                         <h1 className="text-2xl font-display font-bold text-slate-900">Catálogo de Productos</h1>
-                        <p className="mt-1 text-sm text-slate-500">Administra los modelos de tu showroom.</p>
+                        <p className="mt-1 text-sm text-slate-500">Administra los modelos de tu catálogo.</p>
                     </div>
-                    <div className="mt-4 sm:mt-0">
+                    <div className="mt-4 sm:mt-0 flex gap-3 flex-wrap">
+                        <input
+                            type="file"
+                            accept=".csv"
+                            className="hidden"
+                            ref={fileInputRef}
+                            onChange={handleFileUpload}
+                        />
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={importing}
+                            className="inline-flex items-center gap-2 rounded-lg bg-white border border-slate-200 px-5 py-2.5 text-sm font-bold text-slate-700 shadow-sm hover:bg-slate-50 transition-all disabled:opacity-50"
+                        >
+                            <ArrowUpTrayIcon className="h-5 w-5" />
+                            {importing ? 'Importando...' : 'Importar CSV'}
+                        </button>
                         <Link
                             to="/admin/products/new"
                             className="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-brand-600 transition-all"
@@ -185,7 +224,7 @@ export default function Products() {
                                                 <span className="hidden sm:inline">Editar</span>
                                             </Link>
                                             <button
-                                                onClick={() => handleDelete(product.id)}
+                                                onClick={() => setConfirmDelete(product.id)}
                                                 className="min-h-[38px] flex items-center justify-center gap-1.5 px-2 rounded-lg bg-red-50 text-red-600 font-semibold hover:bg-red-100 transition-all text-xs whitespace-nowrap"
                                                 title="Eliminar este producto"
                                             >
@@ -210,6 +249,37 @@ export default function Products() {
                     />
                 )}
             </div>
+
+            {/* Confirm Delete Modal */}
+            <Dialog open={!!confirmDelete} onClose={() => setConfirmDelete(null)} className="relative z-50">
+                <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+                <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
+                    <Dialog.Panel className="mx-auto max-w-sm rounded-xl bg-white p-6 w-full shadow-xl">
+                        <Dialog.Title className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <ExclamationTriangleIcon className="h-6 w-6 text-red-500" />
+                            Eliminar Producto
+                        </Dialog.Title>
+                        <p className="mt-2 text-sm text-slate-600">
+                            ¿Estás seguro de eliminar este producto? Esta acción no se puede deshacer.
+                        </p>
+                        <div className="mt-6 flex justify-end gap-3">
+                            <button
+                                onClick={() => setConfirmDelete(null)}
+                                className="px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={() => confirmDelete && handleDelete(confirmDelete)}
+                                className="px-4 py-2 text-sm font-semibold text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors"
+                            >
+                                Sí, eliminar
+                            </button>
+                        </div>
+                    </Dialog.Panel>
+                </div>
+            </Dialog>
         </div>
     );
 }
+

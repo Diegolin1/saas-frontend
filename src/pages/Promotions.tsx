@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
+import { SkeletonPage } from '../components/Skeleton';
 import { getPromotions, createPromotion, updatePromotion, deletePromotion, Promotion } from '../services/promotion.service';
 import { getErrorMessage } from '../services/api';
 import { Dialog } from '@headlessui/react';
-import { PlusIcon, TrashIcon, XMarkIcon, GiftIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, TrashIcon, XMarkIcon, GiftIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { useToast } from '../context/ToastContext';
 import { formatMXN } from '../utils/format';
 
@@ -13,6 +14,7 @@ export default function Promotions() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [formData, setFormData] = useState({ code: '', discount: '', type: 'PERCENTAGE', expiresAt: '', usageLimit: '', minOrderAmount: '' });
     const [error, setError] = useState('');
+    const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
     const loadData = async () => {
         try {
@@ -59,17 +61,18 @@ export default function Promotions() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!window.confirm('¿Eliminar esta promoción?')) return;
         try {
             await deletePromotion(id);
             loadData();
             showToast('Promoción eliminada', 'success');
         } catch (err: unknown) {
             showToast(getErrorMessage(err, 'Error al eliminar'), 'error');
+        } finally {
+            setConfirmDelete(null);
         }
     };
 
-    if (loading) return <div className="p-8 text-center text-gray-500">Cargando promociones...</div>;
+    if (loading) return <SkeletonPage />;
 
     return (
         <div className="px-4 sm:px-6 lg:px-8">
@@ -147,7 +150,7 @@ export default function Promotions() {
                                         </td>
                                         <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                                             <button
-                                                onClick={() => handleDelete(promo.id)}
+                                                onClick={() => setConfirmDelete(promo.id)}
                                                 className="text-red-400 hover:text-red-600 transition-colors"
                                                 title="Eliminar"
                                             >
@@ -225,6 +228,37 @@ export default function Promotions() {
                     </Dialog.Panel>
                 </div>
             </Dialog>
+
+            {/* Confirm Delete Modal */}
+            <Dialog open={!!confirmDelete} onClose={() => setConfirmDelete(null)} className="relative z-50">
+                <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+                <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
+                    <Dialog.Panel className="mx-auto max-w-sm rounded-xl bg-white p-6 w-full shadow-xl">
+                        <Dialog.Title className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <ExclamationTriangleIcon className="h-6 w-6 text-red-500" />
+                            Eliminar Promoción
+                        </Dialog.Title>
+                        <p className="mt-2 text-sm text-slate-600">
+                            ¿Estás seguro de eliminar esta promoción? Ya no podrá ser utilizada por los clientes.
+                        </p>
+                        <div className="mt-6 flex justify-end gap-3">
+                            <button
+                                onClick={() => setConfirmDelete(null)}
+                                className="px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={() => confirmDelete && handleDelete(confirmDelete)}
+                                className="px-4 py-2 text-sm font-semibold text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors"
+                            >
+                                Sí, eliminar
+                            </button>
+                        </div>
+                    </Dialog.Panel>
+                </div>
+            </Dialog>
         </div>
     );
 }
+

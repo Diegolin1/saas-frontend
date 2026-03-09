@@ -5,6 +5,7 @@ import { getErrorMessage } from '../services/api';
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { Toast } from '../components/Toast';
 import { getSettings } from '../services/settings.service';
+import ImageUploader from '../components/ImageUploader';
 
 const DEFAULT_CATEGORIES = ['Botas', 'Tenis', 'Sandalias', 'Zapatos Formales', 'Accesorios'];
 
@@ -32,20 +33,9 @@ const ProductForm = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleImageChange = (index: number, value: string) => {
-        const newImages = [...formData.images];
-        newImages[index] = value;
-        setFormData({ ...formData, images: newImages });
-    };
-
-    const addImageField = () => {
-        setFormData({ ...formData, images: [...formData.images, ''] });
-    };
-
     const handleVariantChange = (index: number, field: string, value: string | number) => {
         const newVariants = [...variants];
-        // @ts-ignore
-        newVariants[index][field] = value;
+        (newVariants[index] as Record<string, string | number>)[field] = value;
         setVariants(newVariants);
     };
 
@@ -76,12 +66,17 @@ const ProductForm = () => {
             if (!id) return;
             try {
                 const existing = await getProduct(id);
+                const defaultPriceObj = existing.prices && existing.prices.length > 0 ? existing.prices[0] : null;
+                const finalPrice = existing.price !== undefined && existing.price !== null
+                    ? existing.price
+                    : (defaultPriceObj ? defaultPriceObj.price : '');
+
                 setFormData({
                     name: existing.name || '',
                     sku: existing.sku || '',
                     description: existing.description || '',
                     category: existing.category || 'Botas',
-                    price: existing.price !== undefined && existing.price !== null ? String(existing.price) : '',
+                    price: finalPrice !== '' && finalPrice !== null ? String(finalPrice) : '',
                     images: (existing.images || []).map((img: ProductImage) => img.url) || ['']
                 });
                 setVariants(
@@ -243,26 +238,13 @@ const ProductForm = () => {
                 <div className="pt-6 space-y-6">
                     <div>
                         <h3 className="text-lg font-display font-bold leading-6 text-slate-900">Imágenes</h3>
-                        <p className="mt-1 text-sm text-slate-500">URLs de las imágenes del producto.</p>
+                        <p className="mt-1 text-sm text-slate-500">Sube las imágenes del producto. La primera imágen será la principal.</p>
                     </div>
-
-                    <div className="space-y-3">
-                        {formData.images.map((url, index) => (
-                            <div key={index} className="flex gap-2">
-                                <input type="text" placeholder="https://..." value={url} onChange={(e) => handleImageChange(index, e.target.value)}
-                                    className="block w-full rounded-lg border-slate-200 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border p-2.5" />
-                                {index > 0 && (
-                                    <button type="button" onClick={() => {
-                                        const newImages = formData.images.filter((_, i) => i !== index);
-                                        setFormData({ ...formData, images: newImages });
-                                    }} className="text-red-500"><TrashIcon className="h-5 w-5" /></button>
-                                )}
-                            </div>
-                        ))}
-                        <button type="button" onClick={addImageField} className="text-sm text-brand-500 font-bold hover:text-brand-600 flex items-center">
-                            <PlusIcon className="h-4 w-4 mr-1" /> Agregar otra imagen
-                        </button>
-                    </div>
+                    <ImageUploader
+                        value={formData.images}
+                        onChange={urls => setFormData({ ...formData, images: urls })}
+                        maxImages={8}
+                    />
                 </div>
 
                 <div className="pt-6 space-y-6">

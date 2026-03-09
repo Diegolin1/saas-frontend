@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { SkeletonPage } from '../components/Skeleton';
 import { getLeads, updateLead, Lead, LeadStatus, PaginationInfo } from '../services/lead.service';
 import { getUsers, User } from '../services/user.service';
 import { ShoppingCartIcon, ChatBubbleLeftEllipsisIcon, PhoneIcon, FunnelIcon, MagnifyingGlassIcon, UserCircleIcon } from '@heroicons/react/24/outline';
@@ -6,6 +7,7 @@ import { Tooltip } from '../components/Tooltip';
 import Pagination from '../components/Pagination';
 import { useToast } from '../context/ToastContext';
 import { formatMXN, formatDate } from '../utils/format';
+import LeadDetailDrawer from '../components/LeadDetailDrawer';
 
 const STATUS_CONFIG: Record<LeadStatus, { label: string; color: string; bg: string }> = {
     NEW: { label: 'Nuevo', color: 'text-blue-700', bg: 'bg-blue-50 ring-blue-600/20' },
@@ -27,6 +29,7 @@ export default function LeadsCRM() {
     const [statusFilter, setStatusFilter] = useState<LeadStatus | ''>('');
     const [search, setSearch] = useState('');
     const [searchDebounce, setSearchDebounce] = useState('');
+    const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
     useEffect(() => {
         const timer = setTimeout(() => { setSearchDebounce(search); setPage(1); }, 400);
@@ -95,11 +98,7 @@ export default function LeadsCRM() {
         window.open(`https://wa.me/${phoneWithCode}?text=${encodeURIComponent(vendorMsg)}`, '_blank');
     };
 
-    if (loading && leads.length === 0) return (
-        <div className="flex items-center justify-center min-h-[60vh]">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500"></div>
-        </div>
-    );
+    if (loading && leads.length === 0) return <SkeletonPage />;
 
     return (
         <div className="px-4 sm:px-6 lg:px-8 animate-fade-in">
@@ -178,8 +177,8 @@ export default function LeadsCRM() {
                                         return (
                                             <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors">
                                                 {/* Name + Phone */}
-                                                <td className="py-4 pl-4 pr-3 sm:pl-6">
-                                                    <div className="font-medium text-sm text-slate-900">{lead.name || 'Sin Nombre'}</div>
+                                                <td className="py-4 pl-4 pr-3 sm:pl-6 cursor-pointer" onClick={() => setSelectedLead(lead)}>
+                                                    <div className="font-medium text-sm text-slate-900 hover:text-brand-600 transition-colors">{lead.name || 'Sin Nombre'}</div>
                                                     <div className="flex items-center gap-1 text-xs text-slate-500 mt-0.5">
                                                         <PhoneIcon className="h-3 w-3 text-green-500" />
                                                         {lead.phone}
@@ -263,6 +262,12 @@ export default function LeadsCRM() {
                     onPageChange={setPage}
                 />
             )}
+            <LeadDetailDrawer
+                lead={selectedLead}
+                open={!!selectedLead}
+                onClose={() => setSelectedLead(null)}
+                onWhatsApp={handleWhatsAppRecovery}
+            />
         </div>
     );
 }

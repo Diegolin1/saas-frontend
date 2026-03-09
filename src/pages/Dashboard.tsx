@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { CurrencyDollarIcon, ShoppingCartIcon, UsersIcon, SparklesIcon, QrCodeIcon, ArrowTopRightOnSquareIcon, RocketLaunchIcon } from '@heroicons/react/24/outline'
-import { getDashboardStats, getTopProducts, getLowStockProducts } from '../services/dashboard.service'
+import { CurrencyDollarIcon, ShoppingCartIcon, UsersIcon, SparklesIcon, QrCodeIcon, ArrowTopRightOnSquareIcon, RocketLaunchIcon, ChartBarIcon } from '@heroicons/react/24/outline'
+import { getDashboardStats, getTopProducts, getLowStockProducts, getSalesByDay } from '../services/dashboard.service'
+import { SkeletonCard, SkeletonChart } from '../components/Skeleton'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Tooltip } from '../components/Tooltip'
@@ -29,26 +30,34 @@ interface TopProduct {
     images?: { url: string }[];
 }
 
+interface SalesDay {
+    date: string;
+    total: number;
+}
+
 const defaultStats: DashboardStats = { salesToday: 0, salesMonth: 0, pendingOrders: 0, leadsCaptured: 0, abandonedCartsValue: 0, activeCartsCount: 0 };
 
 export default function Dashboard() {
     const [stats, setStats] = useState<DashboardStats | null>(null)
     const [topProducts, setTopProducts] = useState<TopProduct[]>([])
     const [lowStock, setLowStock] = useState<LowStockItem[]>([])
+    const [salesByDay, setSalesByDay] = useState<SalesDay[]>([])
     const [loading, setLoading] = useState(true)
     const { user } = useAuth()
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [statsData, topData, lowData] = await Promise.allSettled([
+                const [statsData, topData, lowData, salesData] = await Promise.allSettled([
                     getDashboardStats(),
                     getTopProducts(),
-                    getLowStockProducts()
+                    getLowStockProducts(),
+                    getSalesByDay()
                 ])
                 setStats(statsData.status === 'fulfilled' ? (statsData.value || defaultStats) : defaultStats)
                 setTopProducts(topData.status === 'fulfilled' ? (topData.value || []) : [])
                 setLowStock(lowData.status === 'fulfilled' ? (lowData.value || []) : [])
+                setSalesByDay(salesData.status === 'fulfilled' ? (salesData.value || []) : [])
             } catch (error) {
                 console.error('Error loading dashboard:', error)
                 setStats(defaultStats)
@@ -60,42 +69,51 @@ export default function Dashboard() {
     }, [])
 
     if (loading) return (
-        <div className="flex items-center justify-center min-h-[60vh]">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500"></div>
+        <div className="max-w-7xl mx-auto space-y-8 animate-fade-in">
+            <div className="flex items-center justify-between">
+                <div>
+                    <div className="animate-pulse rounded-lg bg-slate-200/70 h-7 w-56 mb-2" />
+                    <div className="animate-pulse rounded-lg bg-slate-200/70 h-4 w-72" />
+                </div>
+            </div>
+            <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard />
+            </dl>
+            <SkeletonChart />
         </div>
     )
 
     // Detect if this is a brand new account with no activity
-    const isNewAccount = stats && stats.salesToday === 0 && stats.pendingOrders === 0 && stats.leadsCaptured === 0
+    const isNewAccount = stats && stats.salesToday === 0 && stats.salesMonth === 0 && salesByDay.every(d => d.total === 0) && stats.pendingOrders === 0 && stats.leadsCaptured === 0
 
     const statsCards = [
         {
             name: 'Ventas de Hoy (MXN)',
             stat: stats ? `$${stats.salesToday?.toLocaleString() || '0'}` : '$0',
             icon: CurrencyDollarIcon,
-            color: 'bg-green-500',
-            textColor: 'text-green-500'
+            color: 'bg-emerald-600',
+            textColor: 'text-emerald-600'
         },
         {
             name: 'Ventas del Mes',
             stat: stats ? `$${stats.salesMonth?.toLocaleString() || '0'}` : '$0',
             icon: SparklesIcon,
-            color: 'bg-blue-500',
-            textColor: 'text-blue-500'
+            color: 'bg-stone-800',
+            textColor: 'text-stone-800'
         },
         {
             name: 'Leads Capturados (7 días)',
             stat: stats?.leadsCaptured || 0,
             icon: UsersIcon,
-            color: 'bg-indigo-500',
-            textColor: 'text-indigo-500'
+            color: 'bg-amber-600',
+            textColor: 'text-amber-600'
         },
         {
             name: 'En Carritos Abandonados',
             stat: stats ? `$${stats.abandonedCartsValue?.toLocaleString() || '0'} (${stats.activeCartsCount || 0})` : '$0 (0)',
             icon: ShoppingCartIcon,
-            color: 'bg-pink-500',
-            textColor: 'text-pink-500'
+            color: 'bg-rose-600',
+            textColor: 'text-rose-600'
         }
     ]
 
@@ -105,7 +123,7 @@ export default function Dashboard() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-2xl font-display font-bold text-slate-900">Hola, {user?.name || user?.email?.split('@')[0] || 'Dueño'} 👋</h2>
-                    <p className="text-slate-500 mt-1">Este es el resumen de tu maquinaria de ventas.</p>
+                    <p className="text-slate-500 mt-1">Este es el resumen de tu negocio.</p>
                 </div>
 
                 {/* Global Quick Action Mejorado con Tooltips */}
@@ -119,7 +137,7 @@ export default function Dashboard() {
                             Copiar Mi Enlace
                         </button>
                     </Tooltip>
-                    <Tooltip content="Agrega tu primer producto estrella para activar tu showroom.">
+                    <Tooltip content="Agrega tu primer producto estrella para activar tu catálogo.">
                         <Link
                             to="/admin/products"
                             className="flex items-center gap-2 bg-brand-500 text-white px-6 py-2 rounded-xl text-sm font-bold shadow-sm hover:bg-brand-600 transition-all focus:outline-none"
@@ -143,10 +161,10 @@ export default function Dashboard() {
                             <RocketLaunchIcon className="w-10 h-10 text-brand-500" />
                         </div>
                         <h2 className="text-2xl sm:text-3xl font-display font-bold text-slate-900 tracking-tight mb-3">
-                            Bienvenido a tu Showroom Digital
+                            Bienvenido a Cuero Firme
                         </h2>
                         <p className="text-base text-slate-500 mb-8 leading-relaxed">
-                            Tu motor de ventas B2B está listo. <span className="text-brand-600 font-semibold">¿Listo para tu primer pedido?</span> Sube tu producto estrella y comparte tu enlace para empezar a recibir pedidos por WhatsApp hoy mismo.
+                            Tu catálogo B2B está listo. <span className="text-brand-600 font-semibold">¿Listo para tu primer pedido?</span> Sube tu producto estrella y comparte tu enlace para empezar a recibir pedidos por WhatsApp hoy mismo.
                         </p>
 
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -156,7 +174,7 @@ export default function Dashboard() {
                                     <ArrowTopRightOnSquareIcon className="w-5 h-5" />
                                 </Link>
                             </Tooltip>
-                            <Tooltip content="Mira un tutorial rápido para dominar tu showroom.">
+                            <Tooltip content="Mira un tutorial rápido para dominar tu catálogo.">
                                 <a href="#" onClick={(e) => e.preventDefault()} className="w-full sm:w-auto px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl border border-slate-200 transition-all flex items-center justify-center gap-2 focus:outline-none">
                                     <SparklesIcon className="w-5 h-5" />
                                     Tutorial (Próximamente)
@@ -186,6 +204,47 @@ export default function Dashboard() {
                             </div>
                         ))}
                     </dl>
+
+                    {/* Sales chart - 14 days */}
+                    {salesByDay.length > 0 && (() => {
+                        const maxVal = Math.max(...salesByDay.map(d => d.total), 1);
+                        return (
+                            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-brand-50 rounded-lg">
+                                            <ChartBarIcon className="h-6 w-6 text-brand-600" />
+                                        </div>
+                                        <h3 className="text-lg font-bold text-slate-900 font-display">Ventas Últimos 14 Días</h3>
+                                    </div>
+                                    <span className="text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+                                        Total: ${salesByDay.reduce((s, d) => s + d.total, 0).toLocaleString('es-MX', { minimumFractionDigits: 0 })}
+                                    </span>
+                                </div>
+                                <div className="flex items-end gap-1.5 h-40">
+                                    {salesByDay.map((day) => {
+                                        const pct = maxVal > 0 ? (day.total / maxVal) * 100 : 0;
+                                        const dateLabel = new Date(day.date + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short' });
+                                        return (
+                                            <div key={day.date} className="flex-1 flex flex-col justify-end items-center gap-1 group cursor-default h-full">
+                                                <div className="relative w-full">
+                                                    <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] font-semibold px-2 py-1 rounded whitespace-nowrap z-10 transition-opacity">
+                                                        ${day.total.toLocaleString('es-MX')}
+                                                    </div>
+                                                </div>
+                                                <div
+                                                    className={`w-full rounded-t transition-all duration-300 ${day.total > 0 ? 'bg-brand-500 group-hover:bg-brand-600' : 'bg-slate-100'
+                                                        }`}
+                                                    style={{ height: `${Math.max(pct, 2)}%`, minHeight: '2px' }}
+                                                />
+                                                <span className="text-[9px] text-slate-400 leading-tight truncate w-full text-center">{dateLabel}</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        );
+                    })()}
 
                     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 mt-8">
                         {/* Leads / Low Stock Box */}

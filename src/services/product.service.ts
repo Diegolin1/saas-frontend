@@ -92,3 +92,14 @@ export const getPublicCatalog = async (companyId: string = DEFAULT_COMPANY_ID, p
     const response = await api.get(`/products/public/${companyId}${qs ? '?' + qs : ''}`);
     return response.data;
 };
+
+export const importProductsCsv = async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post('/products/bulk-import', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    });
+    return response.data;
+};

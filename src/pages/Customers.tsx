@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
+import { SkeletonPage } from '../components/Skeleton';
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer, Customer, PaginationInfo } from '../services/customer.service';
 import { getPriceLists, PriceList } from '../services/priceList.service';
 import { getUsers, User } from '../services/user.service';
 import { Dialog } from '@headlessui/react';
-import { PlusIcon, PencilSquareIcon, TrashIcon, XMarkIcon, UserIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, PencilSquareIcon, TrashIcon, XMarkIcon, UserIcon, ExclamationTriangleIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import Pagination from '../components/Pagination';
 import { useToast } from '../context/ToastContext';
 import { getErrorMessage } from '../services/api';
@@ -46,6 +47,8 @@ export default function Customers() {
     const [pagination, setPagination] = useState<PaginationInfo | null>(null);
     const [search, setSearch] = useState('');
     const [searchDebounce, setSearchDebounce] = useState('');
+    const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+
     const [formData, setFormData] = useState<Partial<Customer>>({
         businessName: '',
         taxId: '',
@@ -163,71 +166,82 @@ export default function Customers() {
     };
 
     const handleDelete = async (id: string) => {
-        if (confirm('¿Estás seguro de eliminar este cliente?')) {
-            try {
-                await deleteCustomer(id);
-                showToast('Cliente eliminado correctamente', 'success');
-                loadData();
-            } catch (error) {
-                showToast('Error al eliminar el cliente', 'error');
-            }
+        try {
+            await deleteCustomer(id);
+            showToast('Cliente eliminado correctamente', 'success');
+            loadData();
+        } catch (error) {
+            showToast('Error al eliminar el cliente', 'error');
+        } finally {
+            setConfirmDelete(null);
         }
     };
 
     // Filter potential sellers (Owner, Admin, Supervisor, Seller)
     const potentialSellers = users.filter(u => ['OWNER', 'ADMIN', 'SUPERVISOR', 'SELLER'].includes(u.role));
 
-    if (loading) return <div className="flex items-center justify-center h-64 text-gray-500">Cargando...</div>;
+    if (loading) return <SkeletonPage />;
 
     return (
-        <div className="px-4 sm:px-6 lg:px-8">
-            <div className="sm:flex sm:items-center">
-                <div className="sm:flex-auto">
-                    <h1 className="text-xl font-semibold text-gray-900">Clientes</h1>
-                    <p className="mt-2 text-sm text-gray-700">
+        <div className="px-4 sm:px-6 lg:px-8 animate-fade-in">
+            <div className="sm:flex sm:items-center sm:justify-between">
+                <div>
+                    <h1 className="text-2xl font-display font-bold text-slate-900">Clientes</h1>
+                    <p className="mt-1 text-sm text-slate-500">
                         Lista de clientes registrados, sus listas de precios y límites de crédito.
                     </p>
                 </div>
-                <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+                <div className="mt-4 sm:mt-0">
                     <button
                         type="button"
                         onClick={() => openModal()}
-                        className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
+                        className="flex items-center gap-2 bg-brand-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm hover:bg-brand-600 transition-all"
                     >
-                        <PlusIcon className="h-5 w-5 inline-block -mt-1 mr-1" />
+                        <PlusIcon className="h-4 w-4" />
                         Nuevo Cliente
                     </button>
                 </div>
             </div>
             {/* Búsqueda */}
-            <div className="mt-4">
-                <input
-                    type="text"
-                    placeholder="Buscar por razón social, email o código..."
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    className="w-full max-w-sm rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                />
+            <div className="mt-6">
+                <div className="relative max-w-sm">
+                    <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <input
+                        type="text"
+                        placeholder="Buscar por razón social, email o código..."
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        className="w-full rounded-lg border border-slate-200 pl-9 pr-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
+                    />
+                </div>
             </div>
             <div className="mt-8 flow-root">
                 <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
                     <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-                        <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
-                            <table className="min-w-full divide-y divide-gray-300">
-                                <thead className="bg-gray-50">
+                        <div className="overflow-hidden shadow-sm ring-1 ring-slate-200 sm:rounded-xl">
+                            <table className="min-w-full divide-y divide-slate-200">
+                                <thead className="bg-slate-50">
                                     <tr>
-                                        <th className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Razón Social</th>
-                                        <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">RFC</th>
-                                        <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Vendedor</th> {/* Added Seller Column */}
-                                        <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Lista Precio</th>
-                                        <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Crédito</th>
+                                        <th className="py-3.5 pl-4 pr-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500 sm:pl-6">Razón Social</th>
+                                        <th className="px-3 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500">RFC</th>
+                                        <th className="px-3 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Vendedor</th>
+                                        <th className="px-3 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Lista Precio</th>
+                                        <th className="px-3 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Crédito</th>
                                         <th className="relative py-3.5 pl-3 pr-4 sm:pr-6"><span className="sr-only">Acciones</span></th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-200 bg-white">
+                                <tbody className="divide-y divide-slate-100 bg-white">
                                     {customers.length === 0 ? (
                                         <tr>
-                                            <td colSpan={6} className="text-center py-4 text-gray-500">No hay clientes registrados.</td>
+                                            <td colSpan={6} className="text-center py-16">
+                                                <div className="flex flex-col items-center justify-center">
+                                                    <div className="p-3 bg-slate-50 rounded-xl mb-3">
+                                                        <UserIcon className="h-8 w-8 text-slate-300" />
+                                                    </div>
+                                                    <p className="text-sm font-semibold text-slate-900">Sin clientes registrados</p>
+                                                    <p className="text-xs text-slate-400 mt-1">Agrega tu primer cliente para empezar a gestionar pedidos.</p>
+                                                </div>
+                                            </td>
                                         </tr>
                                     ) : customers.map((customer) => (
                                         <tr key={customer.id}>
@@ -237,11 +251,11 @@ export default function Customers() {
                                             </td>
                                             <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{customer.taxId || '-'}</td>
                                             <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                                {/* Display Seller Name */}
-                                                {(customer as any).seller?.fullName ? (
+                                                {/* Display Seller Name safely without explicit as any where possible, or cast locally safely */}
+                                                {(customer as Customer & { seller?: User }).seller?.fullName ? (
                                                     <div className="flex items-center gap-1">
                                                         <UserIcon className="h-3 w-3 text-gray-400" />
-                                                        {(customer as any).seller.fullName}
+                                                        {(customer as Customer & { seller?: User }).seller?.fullName}
                                                     </div>
                                                 ) : <span className="text-gray-400 italic">Sin asignar</span>}
                                             </td>
@@ -255,7 +269,7 @@ export default function Customers() {
                                                 <button onClick={() => openModal(customer)} className="text-indigo-600 hover:text-indigo-900 mr-4">
                                                     <PencilSquareIcon className="h-5 w-5" />
                                                 </button>
-                                                <button onClick={() => handleDelete(customer.id)} className="text-red-600 hover:text-red-900">
+                                                <button onClick={() => setConfirmDelete(customer.id)} className="text-red-600 hover:text-red-900">
                                                     <TrashIcon className="h-5 w-5" />
                                                 </button>
                                             </td>
@@ -429,6 +443,36 @@ export default function Customers() {
                                 </button>
                             </div>
                         </form>
+                    </Dialog.Panel>
+                </div>
+            </Dialog>
+
+            {/* Confirm Delete Modal */}
+            <Dialog open={!!confirmDelete} onClose={() => setConfirmDelete(null)} className="relative z-50">
+                <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+                <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
+                    <Dialog.Panel className="mx-auto max-w-sm rounded-xl bg-white p-6 w-full shadow-xl">
+                        <Dialog.Title className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <ExclamationTriangleIcon className="h-6 w-6 text-red-500" />
+                            Eliminar Cliente
+                        </Dialog.Title>
+                        <p className="mt-2 text-sm text-slate-600">
+                            ¿Estás seguro de eliminar este cliente? Se borrarán sus datos y referencias.
+                        </p>
+                        <div className="mt-6 flex justify-end gap-3">
+                            <button
+                                onClick={() => setConfirmDelete(null)}
+                                className="px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={() => confirmDelete && handleDelete(confirmDelete)}
+                                className="px-4 py-2 text-sm font-semibold text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors"
+                            >
+                                Sí, eliminar
+                            </button>
+                        </div>
                     </Dialog.Panel>
                 </div>
             </Dialog>
