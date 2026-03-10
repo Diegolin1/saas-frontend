@@ -1,15 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams, useOutletContext } from 'react-router-dom'
 import { getPublicCatalog, Product } from '../../services/product.service'
 import { MagnifyingGlassIcon, ShoppingBagIcon, CheckIcon } from '@heroicons/react/24/outline'
 import { formatMXN } from '../../utils/format'
 import { useCart } from '../../context/CartContext'
 import B2BRevealModal from '../../components/B2BRevealModal'
 import HeroSlider from '../../components/HeroSlider'
-/* ── Quick-add feedback type ────────────────────────────────── */
+/* ── Quick-add feedback type ───────────────────────────────────────── */
 type QuickAddFeedback = { productId: string; size: string } | null
 
 export default function Catalog() {
+    const { companyInfo } = (useOutletContext<{ companyInfo: { name: string; logoUrl: string | null } | null }>()) ?? {}
     const [products, setProducts] = useState<Product[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -157,7 +158,7 @@ export default function Catalog() {
                  Only shown on the first page when no filters/search are active
                ══════════════════════════════════════════════════════════ */}
             {page === 1 && !searchQuery && !selectedCategory && (
-                <HeroSlider />
+                <HeroSlider companyName={companyInfo?.name} />
             )}
 
             {/* ══════════════════════════════════════════════════════════

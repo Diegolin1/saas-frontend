@@ -1,27 +1,36 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
-const SLIDES = [
+const DEFAULT_SLIDES = [
     {
-        id: 'promo-1',
+        id: 'slide-1',
         image: '/assets/flexi_hero_slider_1_1773016080155.png',
-        alt: 'Colección de Vestir - Zapatos Oxford',
-        title: 'ESTRENA TUS ZAPATOS CON 9 MESES SIN INTERESES',
-        subtitle: 'Envío incluido a todo México',
-        buttonText: 'Ver Colección',
+        alt: 'Catálogo mayoreo',
+        titleKey: 'main',
+        subtitle: 'Precios exclusivos para distribuidores y tiendas',
+        buttonText: 'Ver Catálogo',
     },
     {
-        id: 'promo-2',
+        id: 'slide-2',
         image: '/assets/flexi_hero_slider_2_1773016094060.png',
-        alt: 'Bolsas de Piel Premium',
-        title: 'NUEVA COLECCIÓN DE MARROQUINERÍA',
-        subtitle: 'Pieles premium seleccionadas a mano',
-        buttonText: 'Descubrir',
+        alt: 'Nueva colección',
+        titleKey: 'secondary',
+        subtitle: 'Calidad y variedad en cada temporada',
+        buttonText: 'Explorar',
     }
 ];
 
-export default function HeroSlider() {
+interface HeroSliderProps {
+    companyName?: string;
+}
+
+export default function HeroSlider({ companyName }: HeroSliderProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
+    const SLIDES = DEFAULT_SLIDES;
+    const titles: Record<string, string> = {
+        main: companyName ? `Bienvenido a ${companyName}`.toUpperCase() : 'TU CATÁLOGO B2B MAYOREO',
+        secondary: 'NUEVA TEMPORADA DISPONIBLE',
+    };
 
     // Auto-advance
     useEffect(() => {
@@ -53,7 +62,7 @@ export default function HeroSlider() {
                     <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent flex flex-col justify-center px-8 sm:px-16 lg:px-24">
                         <div className={`transform transition-all duration-1000 delay-300 ${index === currentIndex ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'} max-w-2xl`}>
                             <h2 className="text-3xl sm:text-5xl lg:text-6xl font-display font-bold text-white mb-4 leading-tight">
-                                {slide.title}
+                                {titles[slide.titleKey] || titles.main}
                             </h2>
                             <p className="text-sm sm:text-lg text-white/90 mb-8 font-medium tracking-wide">
                                 {slide.subtitle}

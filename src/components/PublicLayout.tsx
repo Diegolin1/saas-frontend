@@ -4,6 +4,14 @@ import { useCart } from '../context/CartContext';
 import { ShoppingBagIcon, UserIcon, MagnifyingGlassIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { getPublicCatalog, Product } from '../services/product.service';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+
+interface CompanyInfo {
+    name: string;
+    logoUrl: string | null;
+    whatsappPhone: string | null;
+}
+
 export default function PublicLayout() {
     const { itemCount } = useCart();
     const [searchParams] = useSearchParams();
@@ -11,9 +19,19 @@ export default function PublicLayout() {
     const companyId = searchParams.get('companyId') || import.meta.env.VITE_COMPANY_ID || '';
     const activeCategory = searchParams.get('category') || '';
     const [categories, setCategories] = useState<string[]>([]);
+    const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [searchValue, setSearchValue] = useState('');
     const searchRef = useRef<HTMLInputElement>(null);
+
+    // Cargar datos públicos de la empresa
+    useEffect(() => {
+        if (!companyId) return;
+        fetch(`${API_URL}/settings/public/${companyId}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(data => { if (data) setCompanyInfo({ name: data.name, logoUrl: data.logoUrl, whatsappPhone: data.whatsappPhone }); })
+            .catch(() => {});
+    }, [companyId]);
 
     // Cargar categorías reales del catálogo para el nav del header
     useEffect(() => {
@@ -72,7 +90,13 @@ export default function PublicLayout() {
                         {/* 2. Logo */}
                         <div className="flex-shrink-0 flex items-center">
                             <Link to={companyId ? `/?companyId=${companyId}` : '/'} className="flex items-center hover:opacity-80 transition-opacity">
-                                <img src="/assets/logo-dark.png" alt="Cuero Firme" className="h-10 sm:h-14 w-auto object-contain" />
+                                {companyInfo?.logoUrl ? (
+                                    <img src={companyInfo.logoUrl} alt={companyInfo.name} className="h-10 sm:h-14 w-auto object-contain" />
+                                ) : (
+                                    <span className="text-base sm:text-lg font-bold tracking-widest uppercase text-stone-900">
+                                        {companyInfo?.name || 'ShowRoom B2B'}
+                                    </span>
+                                )}
                             </Link>
                         </div>
 
@@ -177,7 +201,7 @@ export default function PublicLayout() {
 
             {/* ── Main Content ───────────────────────────────────── */}
             <main className="flex-1">
-                <Outlet />
+                <Outlet context={{ companyInfo }} />
             </main>
 
             {/* ── Footer ─────────────────────────────────────────── */}
