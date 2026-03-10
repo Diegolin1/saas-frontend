@@ -43,11 +43,24 @@ export const createInvoice = async (data: CreateInvoiceData): Promise<Invoice> =
     }
 };
 
-export const getInvoices = async (params?: { page?: number; limit?: number }): Promise<{ invoices: Invoice[]; pagination: InvoicePagination }> => {
+export interface GetInvoicesParams {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+    dateFrom?: string;
+    dateTo?: string;
+}
+
+export const getInvoices = async (params?: GetInvoicesParams): Promise<{ invoices: Invoice[]; pagination: InvoicePagination }> => {
     try {
         const qs = new URLSearchParams();
         if (params?.page) qs.set('page', String(params.page));
         if (params?.limit) qs.set('limit', String(params.limit));
+        if (params?.search?.trim()) qs.set('search', params.search.trim());
+        if (params?.status?.trim()) qs.set('status', params.status.trim());
+        if (params?.dateFrom?.trim()) qs.set('dateFrom', params.dateFrom.trim());
+        if (params?.dateTo?.trim()) qs.set('dateTo', params.dateTo.trim());
         const response = await api.get(`/invoices${qs.toString() ? '?' + qs : ''}`);
         return response.data;
     } catch (error) {

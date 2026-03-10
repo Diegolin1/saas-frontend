@@ -17,14 +17,28 @@ export default function Invoices() {
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
+    const [search, setSearch] = useState('');
+    const [status, setStatus] = useState('');
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
     const [pagination, setPagination] = useState<InvoicePagination | null>(null);
     const { showToast } = useToast();
+
+    useEffect(() => {
+        setPage(1);
+    }, [search, status, dateFrom, dateTo]);
 
     useEffect(() => {
         const load = async () => {
             setLoading(true);
             try {
-                const data = await getInvoices({ page });
+                const data = await getInvoices({
+                    page,
+                    search,
+                    status,
+                    dateFrom,
+                    dateTo,
+                });
                 setInvoices(data.invoices);
                 setPagination(data.pagination);
             } catch (err: any) {
@@ -34,7 +48,7 @@ export default function Invoices() {
             }
         };
         load();
-    }, [page]);
+    }, [page, search, status, dateFrom, dateTo]);
 
     if (loading) return <SkeletonPage />;
 
@@ -44,6 +58,65 @@ export default function Invoices() {
                 <div>
                     <h1 className="text-2xl font-display font-bold text-slate-900">Facturación</h1>
                     <p className="mt-1 text-sm text-slate-500">Consulta y descarga tus comprobantes fiscales digitales (CFDI).</p>
+                </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-slate-200 p-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div className="md:col-span-2">
+                        <label className="block text-xs font-semibold text-slate-500 mb-1">Buscar</label>
+                        <input
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="UUID, ID Facturapi, cliente o email"
+                            className="w-full h-10 px-3 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-semibold text-slate-500 mb-1">Estado</label>
+                        <select
+                            value={status}
+                            onChange={(e) => setStatus(e.target.value)}
+                            className="w-full h-10 px-3 rounded-xl border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        >
+                            <option value="">Todos</option>
+                            <option value="valid">Vigente</option>
+                            <option value="pending">Pendiente</option>
+                            <option value="canceled">Cancelada</option>
+                        </select>
+                    </div>
+                    <div className="flex items-end">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setSearch('');
+                                setStatus('');
+                                setDateFrom('');
+                                setDateTo('');
+                            }}
+                            className="w-full h-10 rounded-xl border border-slate-300 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                        >
+                            Limpiar filtros
+                        </button>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-semibold text-slate-500 mb-1">Desde</label>
+                        <input
+                            type="date"
+                            value={dateFrom}
+                            onChange={(e) => setDateFrom(e.target.value)}
+                            className="w-full h-10 px-3 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-semibold text-slate-500 mb-1">Hasta</label>
+                        <input
+                            type="date"
+                            value={dateTo}
+                            onChange={(e) => setDateTo(e.target.value)}
+                            className="w-full h-10 px-3 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        />
+                    </div>
                 </div>
             </div>
 
