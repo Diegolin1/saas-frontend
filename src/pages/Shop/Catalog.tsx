@@ -5,7 +5,6 @@ import { MagnifyingGlassIcon, ShoppingBagIcon, CheckIcon } from '@heroicons/reac
 import { useCart } from '../../context/CartContext'
 import B2BRevealModal from '../../components/B2BRevealModal'
 import HeroSlider from '../../components/HeroSlider'
-import VisualCategoryCarousel from '../../components/VisualCategoryCarousel'
 /* ── Quick-add feedback type ────────────────────────────────── */
 type QuickAddFeedback = { productId: string; size: string } | null
 
@@ -149,15 +148,34 @@ export default function Catalog() {
             )}
 
             {/* ══════════════════════════════════════════════════════════
-                 FEATURE 2: Visual Category Navigator (Flexi Style)
+                 FEATURE 2: Category pills — sticky + dynamic
                ══════════════════════════════════════════════════════════ */}
-            <div className="bg-white border-b border-stone-100 relative z-40">
-                <VisualCategoryCarousel
-                    selectedCategory={selectedCategory}
-                    onSelect={setSelectedCategory}
-                    categories={availableCategories}
-                />
-            </div>
+            {availableCategories.length > 1 && (
+                <div className="sticky top-0 z-40 bg-white border-b border-stone-100 shadow-sm">
+                    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+                        <div
+                            className="flex items-center gap-2 overflow-x-auto py-3 no-scrollbar"
+                        >
+                            <button
+                                onClick={() => setSelectedCategory('')}
+                                className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase transition-all ${!selectedCategory ? 'bg-stone-900 text-white shadow-sm' : 'bg-stone-100 text-stone-500 hover:bg-stone-200 hover:text-stone-700'}`}
+                            >
+                                Todos
+                            </button>
+                            <div className="h-4 w-px bg-stone-200 flex-shrink-0" />
+                            {availableCategories.map((cat) => (
+                                <button
+                                    key={cat}
+                                    onClick={() => setSelectedCategory(cat)}
+                                    className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase transition-all ${selectedCategory.toLowerCase() === cat.toLowerCase() ? 'bg-stone-900 text-white shadow-sm' : 'bg-stone-100 text-stone-500 hover:bg-stone-200 hover:text-stone-700'}`}
+                                >
+                                    {cat}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* ── Toolbar (Search & Sort) ─────────────────────────────────── */}
             <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
