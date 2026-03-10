@@ -47,6 +47,8 @@ export default function Dashboard() {
     const [loading, setLoading] = useState(true)
     const { user } = useAuth()
     const { companyName } = (useOutletContext<{ companyName: string; companyLogoUrl: string | null }>()) ?? {}
+    const ONBOARDING_LINK_SHARED_KEY = 'onboarding_link_shared_v1'
+    const [linkShared, setLinkShared] = useState<boolean>(() => localStorage.getItem(ONBOARDING_LINK_SHARED_KEY) === '1')
 
     const fetchData = useCallback(async () => {
         setLoading(true)
@@ -121,6 +123,17 @@ export default function Dashboard() {
         }
     ]
 
+    const hasProducts = topProducts.length > 0 || lowStock.length > 0
+    const hasOrders = (stats?.pendingOrders || 0) > 0 || (stats?.salesMonth || 0) > 0
+    const onboardingItems = [
+        { key: 'company', label: 'Configura tu empresa', done: Boolean(companyName) },
+        { key: 'product', label: 'Sube tu primer producto', done: hasProducts },
+        { key: 'share', label: 'Comparte tu catálogo', done: linkShared },
+        { key: 'order', label: 'Recibe tu primer pedido', done: hasOrders },
+    ]
+    const onboardingCompleted = onboardingItems.filter(i => i.done).length
+    const onboardingPct = Math.round((onboardingCompleted / onboardingItems.length) * 100)
+
     return (
         <div className="max-w-7xl mx-auto space-y-8 animate-fade-in">
             {/* Header Area */}
@@ -143,7 +156,11 @@ export default function Dashboard() {
                     </button>
                     <Tooltip content="Comparte este enlace con tus clientes mayoristas para que accedan a tu catálogo digital.">
                         <button
-                            onClick={() => navigator.clipboard.writeText(window.location.origin)}
+                            onClick={() => {
+                                navigator.clipboard.writeText(window.location.origin)
+                                localStorage.setItem(ONBOARDING_LINK_SHARED_KEY, '1')
+                                setLinkShared(true)
+                            }}
                             className="flex items-center gap-2 bg-white px-5 py-2 rounded-xl text-sm font-semibold text-slate-700 shadow-sm border border-slate-200 hover:bg-slate-50 transition-all focus:outline-none"
                         >
                             <QrCodeIcon className="w-5 h-5 text-brand-500" />
@@ -193,6 +210,25 @@ export default function Dashboard() {
                                     Tutorial (Próximamente)
                                 </a>
                             </Tooltip>
+                        </div>
+                        <div className="mt-8 text-left bg-slate-50 rounded-xl border border-slate-200 p-4 sm:p-5">
+                            <div className="flex items-center justify-between gap-3 mb-3">
+                                <p className="text-xs tracking-widest uppercase text-slate-500 font-bold">Checklist Inicial</p>
+                                <span className="text-xs font-semibold text-brand-600">{onboardingCompleted}/{onboardingItems.length} ({onboardingPct}%)</span>
+                            </div>
+                            <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden mb-4">
+                                <div className="h-full bg-brand-500 rounded-full transition-all" style={{ width: `${onboardingPct}%` }} />
+                            </div>
+                            <ul className="space-y-2">
+                                {onboardingItems.map((item) => (
+                                    <li key={item.key} className="flex items-center justify-between text-sm">
+                                        <span className={item.done ? 'text-slate-700 font-medium' : 'text-slate-500'}>{item.label}</span>
+                                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${item.done ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>
+                                            {item.done ? 'OK' : 'Pendiente'}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
                     </div>
                 </div>
