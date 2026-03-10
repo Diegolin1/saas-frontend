@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { getPublicCatalog, Product } from '../../services/product.service'
 import { MagnifyingGlassIcon, ShoppingBagIcon, CheckIcon } from '@heroicons/react/24/outline'
+import { formatMXN } from '../../utils/format'
 import { useCart } from '../../context/CartContext'
 import B2BRevealModal from '../../components/B2BRevealModal'
 import HeroSlider from '../../components/HeroSlider'
@@ -479,7 +480,7 @@ function CatalogCard({
                     {isB2BUnlocked ? (
                         <p className={`text-[11px] sm:text-xs text-stone-500 font-medium ${isFeatured ? 'sm:text-sm' : ''}`}>
                             {product.price
-                                ? `$${Number(product.price).toLocaleString('es-MX', { minimumFractionDigits: 0 })} MXN`
+                                ? `${formatMXN(Number(product.price), false)} MXN`
                                 : 'Precio a consultar'}
                         </p>
                     ) : (

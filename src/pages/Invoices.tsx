@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { SkeletonPage } from '../components/Skeleton';
 import { getInvoices, downloadInvoicePdf, downloadInvoiceXml, type Invoice } from '../services/invoice.service';
 import { DocumentTextIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import { formatMXN, formatDate } from '../utils/format';
 
 const statusMap: Record<string, { label: string; style: string }> = {
     valid: { label: 'Vigente', style: 'bg-green-50 text-green-700 border-green-200' },
@@ -27,16 +28,6 @@ export default function Invoices() {
         };
         load();
     }, []);
-
-    const formatDate = (iso: string) => {
-        const d = new Date(iso);
-        return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
-    };
-
-    const formatMoney = (val: number | string) => {
-        const n = typeof val === 'string' ? parseFloat(val) : val;
-        return `$${n.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`;
-    };
 
     if (loading) return <SkeletonPage />;
 
@@ -89,7 +80,7 @@ export default function Invoices() {
                                                 {formatDate(inv.createdAt)}
                                             </td>
                                             <td className="px-6 py-4 text-sm font-semibold text-slate-900 whitespace-nowrap">
-                                                {formatMoney(inv.total)}
+                                                {formatMXN(inv.total)}
                                             </td>
                                             <td className="px-6 py-4 text-sm text-slate-600">
                                                 {inv.cfdiUse}

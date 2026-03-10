@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Tooltip } from '../components/Tooltip'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts'
+import { formatMXN } from '../utils/format'
 
 interface DashboardStats {
     salesToday: number;
@@ -90,14 +91,14 @@ export default function Dashboard() {
     const statsCards = [
         {
             name: 'Ventas de Hoy (MXN)',
-            stat: stats ? `$${stats.salesToday?.toLocaleString() || '0'}` : '$0',
+            stat: stats ? formatMXN(stats.salesToday ?? 0) : formatMXN(0),
             icon: CurrencyDollarIcon,
             color: 'bg-emerald-600',
             textColor: 'text-emerald-600'
         },
         {
             name: 'Ventas del Mes',
-            stat: stats ? `$${stats.salesMonth?.toLocaleString() || '0'}` : '$0',
+            stat: stats ? formatMXN(stats.salesMonth ?? 0) : formatMXN(0),
             icon: SparklesIcon,
             color: 'bg-stone-800',
             textColor: 'text-stone-800'
@@ -111,7 +112,7 @@ export default function Dashboard() {
         },
         {
             name: 'En Carritos Abandonados',
-            stat: stats ? `$${stats.abandonedCartsValue?.toLocaleString() || '0'} (${stats.activeCartsCount || 0})` : '$0 (0)',
+            stat: stats ? `${formatMXN(stats.abandonedCartsValue ?? 0)} (${stats.activeCartsCount || 0})` : `${formatMXN(0)} (0)`,
             icon: ShoppingCartIcon,
             color: 'bg-rose-600',
             textColor: 'text-rose-600'
@@ -218,7 +219,7 @@ export default function Dashboard() {
                                         <h3 className="text-lg font-bold text-slate-900 font-display">Ventas Últimos 14 Días</h3>
                                     </div>
                                     <span className="text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
-                                        Total: ${salesByDay.reduce((s, d) => s + d.total, 0).toLocaleString('es-MX', { minimumFractionDigits: 0 })}
+                                        Total: {formatMXN(salesByDay.reduce((s, d) => s + d.total, 0), false)}
                                     </span>
                                 </div>
                                 <div className="h-64 mt-4 w-full">
@@ -232,7 +233,7 @@ export default function Dashboard() {
                                             />
                                             <YAxis
                                                 axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }}
-                                                tickFormatter={(val) => `$${val > 999 ? (val / 1000).toFixed(1) + 'k' : val}`}
+                                                tickFormatter={(val) => val > 999 ? `$${(val / 1000).toFixed(1)}k` : formatMXN(val, false)}
                                             />
                                             <RechartsTooltip
                                                 cursor={{ fill: '#f8fafc' }}
@@ -242,7 +243,7 @@ export default function Dashboard() {
                                                         return (
                                                             <div className="bg-slate-800 text-white p-3 rounded-lg shadow-xl border border-slate-700">
                                                                 <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">{dateLabel}</p>
-                                                                <p className="font-display font-bold text-lg">${Number(payload[0].value).toLocaleString('es-MX')}</p>
+                                                                <p className="font-display font-bold text-lg">{formatMXN(Number(payload[0].value))}</p>
                                                             </div>
                                                         );
                                                     }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { SkeletonPage } from '../components/Skeleton';
 import { DocumentTextIcon, ChevronDownIcon, FunnelIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import { exportToCSV } from '../utils/export';
+import { formatMXN } from '../utils/format';
 import { getOrders, updateOrderStatus, PaginationInfo, Order } from '../services/order.service';
 import { createCheckoutSession } from '../services/payment.service';
 import { createInvoice, downloadInvoicePdf, downloadInvoiceXml, Invoice } from '../services/invoice.service';
@@ -266,13 +267,13 @@ export default function Orders() {
                                                     )}
                                                 </td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
-                                                    ${Number(order.subtotal).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                                                    {formatMXN(order.subtotal)}
                                                 </td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                                    ${Number((order as any).taxAmount || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                                                    {formatMXN((order as any).taxAmount || 0)}
                                                 </td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm font-bold text-gray-900">
-                                                    ${Number(order.total).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                                                    {formatMXN(order.total)}
                                                 </td>
                                                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                                     {order.discountAmount > 0 ? (
@@ -281,7 +282,7 @@ export default function Orders() {
                                                                 {order.promotionCode}
                                                             </span>
                                                             <span className="text-green-600 font-medium">
-                                                                -${Number(order.discountAmount).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                                                                -{formatMXN(order.discountAmount)}
                                                             </span>
                                                         </span>
                                                     ) : (
