@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { SkeletonPage } from '../components/Skeleton';
 import { DocumentTextIcon, ChevronDownIcon, FunnelIcon, ArrowDownTrayIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import { exportToCSV } from '../utils/export';
 import { formatMXN } from '../utils/format';
-import { createOrder, getOrders, updateOrderStatus, PaginationInfo, Order } from '../services/order.service';
+import { createOrder, downloadOrdersCsv, getOrders, updateOrderStatus, PaginationInfo, Order } from '../services/order.service';
 import { createCheckoutSession } from '../services/payment.service';
 import { createInvoice, downloadInvoicePdf, downloadInvoiceXml, Invoice } from '../services/invoice.service';
 import { useAuth } from '../context/AuthContext';
@@ -41,6 +40,7 @@ export default function Orders() {
     const [statusFilter, setStatusFilter] = useState('');
     const [searchInput, setSearchInput] = useState('');
     const [searchText, setSearchText] = useState('');
+    const [exportingCsv, setExportingCsv] = useState(false);
     const { user } = useAuth();
     const canChangeStatus = user && ['OWNER', 'ADMIN', 'SUPERVISOR'].includes(user.role);
 
@@ -196,26 +196,27 @@ export default function Orders() {
                         Gestiona tus pedidos y genera facturas fiscales (CFDI).
                     </p>
                 </div>
-                {orders.length > 0 && (
+                {(pagination?.total || 0) > 0 && (
                     <button
-                        onClick={() => {
-                            const dataToExport = orders.map(o => ({
-                                'Pedido #': o.orderNumber,
-                                'Cliente': o.customerName,
-                                'Fecha': o.date,
-                                'Estado': statusLabels[o.status] || o.status,
-                                'Subtotal': Number(o.subtotal).toFixed(2),
-                                'IVA': Number((o as any).taxAmount || 0).toFixed(2),
-                                'Total': Number(o.total).toFixed(2),
-                                'Descuento': Number(o.discountAmount || 0).toFixed(2),
-                                'Código Promo': o.promotionCode || ''
-                            }));
-                            exportToCSV(dataToExport, 'pedidos');
+                        disabled={exportingCsv}
+                        onClick={async () => {
+                            try {
+                                setExportingCsv(true);
+                                await downloadOrdersCsv({
+                                    status: statusFilter || undefined,
+                                    search: searchText || undefined
+                                });
+                                showToast('CSV exportado correctamente.', 'success');
+                            } catch {
+                                showToast('Error al exportar el CSV de pedidos.', 'error');
+                            } finally {
+                                setExportingCsv(false);
+                            }
                         }}
-                        className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all shadow-sm"
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                         <ArrowDownTrayIcon className="h-4 w-4" />
-                        Exportar CSV
+                        {exportingCsv ? 'Exportando...' : 'Exportar CSV'}
                     </button>
                 )}
             </div>

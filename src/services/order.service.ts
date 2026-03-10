@@ -89,3 +89,20 @@ export const getOrderStatusHistory = async (id: string): Promise<{ history: Orde
     const response = await api.get(`/orders/${id}/status-history`);
     return response.data;
 };
+
+export const downloadOrdersCsv = async (params?: { status?: string; search?: string }): Promise<void> => {
+    const searchParams = new URLSearchParams();
+    if (params?.status) searchParams.set('status', params.status);
+    if (params?.search) searchParams.set('search', params.search);
+    const qs = searchParams.toString();
+
+    const response = await api.get(`/orders/export/csv${qs ? '?' + qs : ''}`, { responseType: 'blob' });
+    const url = window.URL.createObjectURL(new Blob([response.data], { type: 'text/csv;charset=utf-8;' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Pedidos_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.parentNode?.removeChild(link);
+    window.URL.revokeObjectURL(url);
+};
