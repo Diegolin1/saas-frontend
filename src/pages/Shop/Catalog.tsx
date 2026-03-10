@@ -33,11 +33,22 @@ export default function Catalog() {
     // Quick-add feedback
     const [quickAdded, setQuickAdded] = useState<QuickAddFeedback>(null)
 
-    // Debounce search
+    // Debounce search (solo para el campo de búsqueda interno)
     useEffect(() => {
         const timer = setTimeout(() => setSearchQuery(searchInput), 350)
         return () => clearTimeout(timer)
     }, [searchInput])
+
+    // Sincronizar con URL params cuando cambian (nav del header, buscador del header)
+    useEffect(() => {
+        const urlCategory = searchParams.get('category') || ''
+        const urlSearch = searchParams.get('search') || ''
+        setSelectedCategory(urlCategory)
+        if (urlSearch) {
+            setSearchInput(urlSearch)
+            setSearchQuery(urlSearch)
+        }
+    }, [searchParams])
 
     // Load all available categories once (no filter) to populate the carousel
     useEffect(() => {

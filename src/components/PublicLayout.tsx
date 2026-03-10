@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Outlet, Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { ShoppingBagIcon, UserIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { ShoppingBagIcon, UserIcon, MagnifyingGlassIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { getPublicCatalog, Product } from '../services/product.service';
 
 export default function PublicLayout() {
@@ -11,6 +11,9 @@ export default function PublicLayout() {
     const companyId = searchParams.get('companyId') || import.meta.env.VITE_COMPANY_ID || '';
     const activeCategory = searchParams.get('category') || '';
     const [categories, setCategories] = useState<string[]>([]);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [searchValue, setSearchValue] = useState('');
+    const searchRef = useRef<HTMLInputElement>(null);
 
     // Cargar categorías reales del catálogo para el nav del header
     useEffect(() => {
@@ -25,11 +28,21 @@ export default function PublicLayout() {
         load();
     }, [companyId]);
 
-    const goToCategory = (cat: string) => {
-        const params = new URLSearchParams();
-        if (companyId) params.set('companyId', companyId);
-        if (cat) params.set('category', cat);
-        navigate(`/?${params.toString()}`);
+    // Cerrar menú móvil al cambiar de ruta
+    useEffect(() => { setMobileMenuOpen(false); }, [searchParams]);
+
+    const buildUrl = (params: Record<string, string>) => {
+        const p = new URLSearchParams();
+        if (companyId) p.set('companyId', companyId);
+        Object.entries(params).forEach(([k, v]) => { if (v) p.set(k, v); });
+        return `/?${p.toString()}`;
+    };
+
+    const goToCategory = (cat: string) => navigate(buildUrl({ category: cat }));
+
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (searchValue.trim()) navigate(buildUrl({ search: searchValue.trim() }));
     };
 
     return (
@@ -42,22 +55,35 @@ export default function PublicLayout() {
             {/* ── Enterprise Header ──────────────────────────────────── */}
             <header className="sticky top-0 z-50 bg-white border-b border-stone-200">
                 <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center h-16 sm:h-20">
-                        {/* 1. Logo (Left) */}
+                    <div className="flex justify-between items-center h-16 sm:h-20 gap-4">
+
+                        {/* 1. Hamburger (Mobile only) */}
+                        <button
+                            className="md:hidden text-stone-700 hover:text-stone-900 p-1 flex-shrink-0"
+                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                            aria-label="Menú"
+                        >
+                            {mobileMenuOpen
+                                ? <XMarkIcon className="h-6 w-6" />
+                                : <Bars3Icon className="h-6 w-6" />
+                            }
+                        </button>
+
+                        {/* 2. Logo */}
                         <div className="flex-shrink-0 flex items-center">
                             <Link to={companyId ? `/?companyId=${companyId}` : '/'} className="flex items-center hover:opacity-80 transition-opacity">
-                                <img src="/assets/logo-dark.png" alt="Cuero Firme" className="h-12 sm:h-16 w-auto object-contain" />
+                                <img src="/assets/logo-dark.png" alt="Cuero Firme" className="h-10 sm:h-14 w-auto object-contain" />
                             </Link>
                         </div>
 
-                        {/* 2. Main Navigation (Center) — categorías dinámicas y funcionales */}
+                        {/* 3. Main Navigation (Desktop) */}
                         {categories.length > 0 && (
-                            <nav className="hidden md:flex items-center gap-6 lg:gap-8">
+                            <nav className="hidden md:flex items-center gap-5 lg:gap-7 flex-1 justify-center">
                                 {categories.map((cat) => (
                                     <button
                                         key={cat}
                                         onClick={() => goToCategory(cat)}
-                                        className={`text-sm font-medium transition-colors ${activeCategory.toLowerCase() === cat.toLowerCase()
+                                        className={`text-sm font-medium transition-colors whitespace-nowrap ${activeCategory.toLowerCase() === cat.toLowerCase()
                                                 ? 'text-stone-900 font-bold border-b-2 border-stone-900 pb-0.5'
                                                 : 'text-stone-600 hover:text-stone-900'
                                             }`}
@@ -68,29 +94,40 @@ export default function PublicLayout() {
                             </nav>
                         )}
 
-                        {/* 3. Utilities (Right) */}
-                        <div className="flex items-center gap-4 sm:gap-6">
-                            <div className="hidden lg:flex items-center bg-stone-100 rounded-full px-3 py-1.5 border border-transparent focus-within:border-stone-300 focus-within:bg-white transition-all w-48">
+                        {/* 4. Utilities (Right) */}
+                        <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
+                            {/* Search — desktop */}
+                            <form onSubmit={handleSearch} className="hidden lg:flex items-center bg-stone-100 rounded-full px-3 py-1.5 border border-transparent focus-within:border-stone-300 focus-within:bg-white transition-all w-44 focus-within:w-56">
                                 <MagnifyingGlassIcon className="h-4 w-4 text-stone-500 flex-shrink-0" />
                                 <input
+                                    ref={searchRef}
                                     type="text"
-                                    placeholder="Búsqueda"
+                                    placeholder="Buscar..."
+                                    value={searchValue}
+                                    onChange={e => setSearchValue(e.target.value)}
                                     className="bg-transparent border-none outline-none text-xs w-full pl-2 text-stone-800 placeholder-stone-500"
                                 />
-                            </div>
+                            </form>
 
-                            <button className="lg:hidden text-stone-800 hover:text-stone-500 transition-colors p-1">
+                            {/* Search icon (mobile/tablet) */}
+                            <button
+                                className="lg:hidden text-stone-700 hover:text-stone-900 p-1 transition-colors"
+                                onClick={() => {
+                                    const q = prompt('Buscar productos:');
+                                    if (q?.trim()) navigate(buildUrl({ search: q.trim() }));
+                                }}
+                            >
                                 <MagnifyingGlassIcon className="h-5 w-5 sm:h-6 sm:w-6" />
                             </button>
 
-                            <Link to="/login" className="text-stone-800 hover:text-stone-500 transition-colors p-1" title="Mi Cuenta">
+                            <Link to="/login" className="text-stone-700 hover:text-stone-900 transition-colors p-1" title="Mi Cuenta">
                                 <UserIcon className="h-5 w-5 sm:h-6 sm:w-6" />
                             </Link>
 
                             <Link to={companyId ? `/cart?companyId=${companyId}` : '/cart'} className="relative group p-1" title="Mi Carrito">
-                                <ShoppingBagIcon className="h-5 w-5 sm:h-6 sm:w-6 text-stone-800 group-hover:text-stone-500 transition-colors" />
+                                <ShoppingBagIcon className="h-5 w-5 sm:h-6 sm:w-6 text-stone-700 group-hover:text-stone-900 transition-colors" />
                                 {itemCount > 0 && (
-                                    <span className="absolute -top-1 -right-1.5 w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-[9px] sm:text-[10px] font-bold text-white bg-red-600 rounded-full leading-none shadow-sm">
+                                    <span className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center text-[9px] font-bold text-white bg-stone-900 rounded-full">
                                         {itemCount}
                                     </span>
                                 )}
@@ -98,6 +135,44 @@ export default function PublicLayout() {
                         </div>
                     </div>
                 </div>
+
+                {/* ── Mobile Navigation Drawer ─────────────────────── */}
+                {mobileMenuOpen && (
+                    <div className="md:hidden bg-white border-t border-stone-100 px-4 py-4 space-y-1 shadow-lg animate-fade-in">
+                        {/* Mobile search */}
+                        <form onSubmit={handleSearch} className="flex items-center bg-stone-100 rounded-full px-3 py-2 mb-3">
+                            <MagnifyingGlassIcon className="h-4 w-4 text-stone-400 flex-shrink-0" />
+                            <input
+                                type="text"
+                                placeholder="Buscar productos..."
+                                value={searchValue}
+                                onChange={e => setSearchValue(e.target.value)}
+                                className="bg-transparent border-none outline-none text-sm w-full pl-2 text-stone-800 placeholder-stone-400"
+                            />
+                        </form>
+                        {/* All products */}
+                        <button
+                            onClick={() => navigate(companyId ? `/?companyId=${companyId}` : '/')}
+                            className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${!activeCategory ? 'bg-stone-900 text-white' : 'text-stone-700 hover:bg-stone-50'
+                                }`}
+                        >
+                            Todos los productos
+                        </button>
+                        {/* Categories */}
+                        {categories.map((cat) => (
+                            <button
+                                key={cat}
+                                onClick={() => goToCategory(cat)}
+                                className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeCategory.toLowerCase() === cat.toLowerCase()
+                                        ? 'bg-stone-900 text-white'
+                                        : 'text-stone-700 hover:bg-stone-50'
+                                    }`}
+                            >
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
+                )}
             </header>
 
             {/* ── Main Content ───────────────────────────────────── */}
