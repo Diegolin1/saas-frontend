@@ -101,3 +101,27 @@ export const downloadInvoiceXml = async (invoiceId: string, uuid?: string): Prom
         throw new Error('Error al descargar el XML de la factura.');
     }
 };
+
+export const downloadInvoicesCsv = async (params?: Omit<GetInvoicesParams, 'page' | 'limit'>): Promise<void> => {
+    try {
+        const qs = new URLSearchParams();
+        if (params?.search?.trim()) qs.set('search', params.search.trim());
+        if (params?.status?.trim()) qs.set('status', params.status.trim());
+        if (params?.dateFrom?.trim()) qs.set('dateFrom', params.dateFrom.trim());
+        if (params?.dateTo?.trim()) qs.set('dateTo', params.dateTo.trim());
+        if (params?.sortBy) qs.set('sortBy', params.sortBy);
+        if (params?.sortDir) qs.set('sortDir', params.sortDir);
+
+        const response = await api.get(`/invoices/export/csv${qs.toString() ? '?' + qs : ''}`, { responseType: 'blob' });
+        const url = window.URL.createObjectURL(new Blob([response.data], { type: 'text/csv;charset=utf-8;' }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `Facturas_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode?.removeChild(link);
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        throw new Error(getErrorMessage(error, 'Error al exportar facturas a CSV.'));
+    }
+};

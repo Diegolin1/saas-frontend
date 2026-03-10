@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { SkeletonPage } from '../components/Skeleton';
-import { getInvoices, downloadInvoicePdf, downloadInvoiceXml, type Invoice, type InvoicePagination } from '../services/invoice.service';
+import { getInvoices, downloadInvoicesCsv, downloadInvoicePdf, downloadInvoiceXml, type Invoice, type InvoicePagination } from '../services/invoice.service';
 import { DocumentTextIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import { formatMXN, formatDate } from '../utils/format';
 import { useToast } from '../context/ToastContext';
@@ -37,6 +37,7 @@ export default function Invoices() {
     const [dateTo, setDateTo] = useState(initialDateTo);
     const [sortBy, setSortBy] = useState<InvoiceSortField>(initialSortBy);
     const [sortDir, setSortDir] = useState<SortDirection>(initialSortDir);
+    const [exporting, setExporting] = useState(false);
     const [pagination, setPagination] = useState<InvoicePagination | null>(null);
     const { showToast } = useToast();
 
@@ -117,6 +118,33 @@ export default function Invoices() {
                 <div>
                     <h1 className="text-2xl font-display font-bold text-slate-900">Facturación</h1>
                     <p className="mt-1 text-sm text-slate-500">Consulta y descarga tus comprobantes fiscales digitales (CFDI).</p>
+                </div>
+                <div className="mt-3 sm:mt-0">
+                    <button
+                        type="button"
+                        disabled={exporting}
+                        onClick={async () => {
+                            try {
+                                setExporting(true);
+                                await downloadInvoicesCsv({
+                                    search: debouncedSearch,
+                                    status,
+                                    dateFrom,
+                                    dateTo,
+                                    sortBy,
+                                    sortDir,
+                                });
+                            } catch (err: any) {
+                                showToast(getErrorMessage(err, 'No se pudo exportar el CSV.'), 'error');
+                            } finally {
+                                setExporting(false);
+                            }
+                        }}
+                        className="inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-semibold text-brand-700 bg-brand-50 border border-brand-200 hover:bg-brand-100 disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                        <ArrowDownTrayIcon className="h-4 w-4" />
+                        {exporting ? 'Exportando...' : 'Exportar CSV'}
+                    </button>
                 </div>
             </div>
 
