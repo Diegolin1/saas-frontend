@@ -8,6 +8,9 @@ import { getErrorMessage } from '../services/api';
 import Pagination from '../components/Pagination';
 import { useSearchParams } from 'react-router-dom';
 
+type InvoiceSortField = 'createdAt' | 'total' | 'status';
+type SortDirection = 'asc' | 'desc';
+
 const statusMap: Record<string, { label: string; style: string }> = {
     valid: { label: 'Vigente', style: 'bg-green-50 text-green-700 border-green-200' },
     canceled: { label: 'Cancelada', style: 'bg-red-50 text-red-700 border-red-200' },
@@ -21,6 +24,8 @@ export default function Invoices() {
     const initialStatus = urlParams.get('status') || '';
     const initialDateFrom = urlParams.get('dateFrom') || '';
     const initialDateTo = urlParams.get('dateTo') || '';
+    const initialSortBy = (urlParams.get('sortBy') as InvoiceSortField) || 'createdAt';
+    const initialSortDir = (urlParams.get('sortDir') as SortDirection) || 'desc';
 
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [loading, setLoading] = useState(true);
@@ -29,12 +34,28 @@ export default function Invoices() {
     const [status, setStatus] = useState(initialStatus);
     const [dateFrom, setDateFrom] = useState(initialDateFrom);
     const [dateTo, setDateTo] = useState(initialDateTo);
+    const [sortBy, setSortBy] = useState<InvoiceSortField>(initialSortBy);
+    const [sortDir, setSortDir] = useState<SortDirection>(initialSortDir);
     const [pagination, setPagination] = useState<InvoicePagination | null>(null);
     const { showToast } = useToast();
 
+    const sortLabel = (field: InvoiceSortField): string => {
+        if (sortBy !== field) return '';
+        return sortDir === 'asc' ? '▲' : '▼';
+    };
+
+    const toggleSort = (field: InvoiceSortField) => {
+        if (sortBy === field) {
+            setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+            return;
+        }
+        setSortBy(field);
+        setSortDir(field === 'status' ? 'asc' : 'desc');
+    };
+
     useEffect(() => {
         setPage((prev) => (prev === 1 ? prev : 1));
-    }, [search, status, dateFrom, dateTo]);
+    }, [search, status, dateFrom, dateTo, sortBy, sortDir]);
 
     useEffect(() => {
         const nextParams = new URLSearchParams();
@@ -43,13 +64,15 @@ export default function Invoices() {
         if (status.trim()) nextParams.set('status', status.trim());
         if (dateFrom.trim()) nextParams.set('dateFrom', dateFrom.trim());
         if (dateTo.trim()) nextParams.set('dateTo', dateTo.trim());
+        if (sortBy !== 'createdAt') nextParams.set('sortBy', sortBy);
+        if (sortDir !== 'desc') nextParams.set('sortDir', sortDir);
 
         const current = urlParams.toString();
         const next = nextParams.toString();
         if (current !== next) {
             setUrlParams(nextParams, { replace: true });
         }
-    }, [page, search, status, dateFrom, dateTo, urlParams, setUrlParams]);
+    }, [page, search, status, dateFrom, dateTo, sortBy, sortDir, urlParams, setUrlParams]);
 
     useEffect(() => {
         const load = async () => {
@@ -61,6 +84,8 @@ export default function Invoices() {
                     status,
                     dateFrom,
                     dateTo,
+                    sortBy,
+                    sortDir,
                 });
                 setInvoices(data.invoices);
                 setPagination(data.pagination);
@@ -71,7 +96,7 @@ export default function Invoices() {
             }
         };
         load();
-    }, [page, search, status, dateFrom, dateTo]);
+    }, [page, search, status, dateFrom, dateTo, sortBy, sortDir]);
 
     if (loading) return <SkeletonPage />;
 
@@ -160,10 +185,22 @@ export default function Invoices() {
                             <thead className="bg-slate-50">
                                 <tr>
                                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">UUID</th>
-                                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Fecha</th>
-                                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Total</th>
+                                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                        <button type="button" onClick={() => toggleSort('createdAt')} className="inline-flex items-center gap-1 hover:text-slate-700">
+                                            Fecha {sortLabel('createdAt')}
+                                        </button>
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                        <button type="button" onClick={() => toggleSort('total')} className="inline-flex items-center gap-1 hover:text-slate-700">
+                                            Total {sortLabel('total')}
+                                        </button>
+                                    </th>
                                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Uso CFDI</th>
-                                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Estado</th>
+                                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                        <button type="button" onClick={() => toggleSort('status')} className="inline-flex items-center gap-1 hover:text-slate-700">
+                                            Estado {sortLabel('status')}
+                                        </button>
+                                    </th>
                                     <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Descargar</th>
                                 </tr>
                             </thead>

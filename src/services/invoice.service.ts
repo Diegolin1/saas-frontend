@@ -50,6 +50,8 @@ export interface GetInvoicesParams {
     status?: string;
     dateFrom?: string;
     dateTo?: string;
+    sortBy?: 'createdAt' | 'total' | 'status';
+    sortDir?: 'asc' | 'desc';
 }
 
 export const getInvoices = async (params?: GetInvoicesParams): Promise<{ invoices: Invoice[]; pagination: InvoicePagination }> => {
@@ -61,6 +63,8 @@ export const getInvoices = async (params?: GetInvoicesParams): Promise<{ invoice
         if (params?.status?.trim()) qs.set('status', params.status.trim());
         if (params?.dateFrom?.trim()) qs.set('dateFrom', params.dateFrom.trim());
         if (params?.dateTo?.trim()) qs.set('dateTo', params.dateTo.trim());
+        if (params?.sortBy) qs.set('sortBy', params.sortBy);
+        if (params?.sortDir) qs.set('sortDir', params.sortDir);
         const response = await api.get(`/invoices${qs.toString() ? '?' + qs : ''}`);
         return response.data;
     } catch (error) {
