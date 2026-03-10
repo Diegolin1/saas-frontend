@@ -21,7 +21,8 @@ export default function Catalog() {
     // Search, filter, pagination state
     const [searchQuery, setSearchQuery] = useState('')
     const [searchInput, setSearchInput] = useState('')
-    const [selectedCategory, setSelectedCategory] = useState('')
+    // Inicializar desde el query param ?category (viene del nav del header)
+    const [selectedCategory, setSelectedCategory] = useState(() => searchParams.get('category') || '')
     const [page, setPage] = useState(1)
     const [totalPages, setTotalPages] = useState(1)
     const [totalCount, setTotalCount] = useState(0)
