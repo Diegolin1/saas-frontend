@@ -31,6 +31,7 @@ export default function Invoices() {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(initialPage);
     const [search, setSearch] = useState(initialSearch);
+    const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
     const [status, setStatus] = useState(initialStatus);
     const [dateFrom, setDateFrom] = useState(initialDateFrom);
     const [dateTo, setDateTo] = useState(initialDateTo);
@@ -54,13 +55,23 @@ export default function Invoices() {
     };
 
     useEffect(() => {
+        const timer = window.setTimeout(() => {
+            setDebouncedSearch(search);
+        }, 350);
+
+        return () => {
+            window.clearTimeout(timer);
+        };
+    }, [search]);
+
+    useEffect(() => {
         setPage((prev) => (prev === 1 ? prev : 1));
-    }, [search, status, dateFrom, dateTo, sortBy, sortDir]);
+    }, [debouncedSearch, status, dateFrom, dateTo, sortBy, sortDir]);
 
     useEffect(() => {
         const nextParams = new URLSearchParams();
         if (page > 1) nextParams.set('page', String(page));
-        if (search.trim()) nextParams.set('search', search.trim());
+        if (debouncedSearch.trim()) nextParams.set('search', debouncedSearch.trim());
         if (status.trim()) nextParams.set('status', status.trim());
         if (dateFrom.trim()) nextParams.set('dateFrom', dateFrom.trim());
         if (dateTo.trim()) nextParams.set('dateTo', dateTo.trim());
@@ -72,7 +83,7 @@ export default function Invoices() {
         if (current !== next) {
             setUrlParams(nextParams, { replace: true });
         }
-    }, [page, search, status, dateFrom, dateTo, sortBy, sortDir, urlParams, setUrlParams]);
+    }, [page, debouncedSearch, status, dateFrom, dateTo, sortBy, sortDir, urlParams, setUrlParams]);
 
     useEffect(() => {
         const load = async () => {
@@ -80,7 +91,7 @@ export default function Invoices() {
             try {
                 const data = await getInvoices({
                     page,
-                    search,
+                    search: debouncedSearch,
                     status,
                     dateFrom,
                     dateTo,
@@ -96,7 +107,7 @@ export default function Invoices() {
             }
         };
         load();
-    }, [page, search, status, dateFrom, dateTo, sortBy, sortDir]);
+    }, [page, debouncedSearch, status, dateFrom, dateTo, sortBy, sortDir]);
 
     if (loading) return <SkeletonPage />;
 
