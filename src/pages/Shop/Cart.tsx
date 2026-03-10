@@ -5,7 +5,7 @@ import api from '../../services/api';
 import { createOrder } from '../../services/order.service';
 import { Toast } from '../../components/Toast';
 import { formatMXN } from '../../utils/format';
-import { getPublicCompanyInfo } from '../../services/settings.service';
+import { getCompanyBySlug, getPublicCompanyInfo } from '../../services/settings.service';
 
 export default function Cart() {
     const { items, removeFromCart, updateQuantity, total, clearCart, isB2BUnlocked, b2bLead } = useCart();
@@ -14,12 +14,26 @@ export default function Cart() {
     const [feedback, setFeedback] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
     const [searchParams] = useSearchParams();
     const [vendorPhone, setVendorPhone] = useState('');
+    const slugParam = searchParams.get('slug') || '';
+    const companyIdParam = searchParams.get('companyId') || '';
+    const [resolvedCompanyId, setResolvedCompanyId] = useState(companyIdParam || import.meta.env.VITE_COMPANY_ID || '');
 
     const [promoCode, setPromoCode] = useState('');
     const [promoValidating, setPromoValidating] = useState(false);
     const [appliedPromo, setAppliedPromo] = useState<{ code: string; discount: number; type: string } | null>(null);
 
-    const companyId = searchParams.get('companyId') || import.meta.env.VITE_COMPANY_ID || '';
+    const companyId = resolvedCompanyId;
+
+    useEffect(() => {
+        if (slugParam) {
+            getCompanyBySlug(slugParam)
+                .then(info => setResolvedCompanyId(info.id))
+                .catch(() => setResolvedCompanyId(companyIdParam || import.meta.env.VITE_COMPANY_ID || ''));
+            return;
+        }
+
+        setResolvedCompanyId(companyIdParam || import.meta.env.VITE_COMPANY_ID || '');
+    }, [slugParam, companyIdParam]);
 
     useEffect(() => {
         if (!companyId) return;
@@ -99,7 +113,12 @@ export default function Cart() {
             clearCart();
             localStorage.removeItem('saas_cart_id');
             setFeedback({ message: 'Pedido enviado y registrado correctamente.', type: 'success' });
-            setTimeout(() => { window.location.href = '/'; }, 2000);
+            setTimeout(() => {
+                const homeUrl = slugParam
+                    ? `/?slug=${encodeURIComponent(slugParam)}`
+                    : (companyId ? `/?companyId=${companyId}` : '/');
+                window.location.href = homeUrl;
+            }, 2000);
         } catch {
             setFeedback({ message: 'Error al procesar tu pedido. Intenta de nuevo.', type: 'error' });
         } finally {
@@ -136,7 +155,7 @@ export default function Cart() {
                             <p className="text-sm text-stone-400 mt-2">Explora el catálogo y selecciona los modelos que te interesen.</p>
                         </div>
                         <Link
-                            to={companyId ? `/?companyId=${companyId}` : '/'}
+                            to={slugParam ? `/?slug=${encodeURIComponent(slugParam)}` : (companyId ? `/?companyId=${companyId}` : '/')}
                             className="text-[11px] tracking-widest uppercase border-b border-stone-400 text-stone-500 hover:text-stone-900 hover:border-stone-900 transition-colors pb-0.5 font-medium"
                         >
                             Ver catálogo
@@ -222,7 +241,7 @@ export default function Cart() {
                             {/* Continue shopping */}
                             <div className="mt-8 pt-6 border-t border-stone-100">
                                 <Link
-                                    to={companyId ? `/?companyId=${companyId}` : '/'}
+                                    to={slugParam ? `/?slug=${encodeURIComponent(slugParam)}` : (companyId ? `/?companyId=${companyId}` : '/')}
                                     className="text-[11px] tracking-widest uppercase text-stone-400 hover:text-stone-900 transition-colors font-medium border-b border-stone-300 hover:border-stone-900 pb-0.5"
                                 >
                                     ← Seguir comprando

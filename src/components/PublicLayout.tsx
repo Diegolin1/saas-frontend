@@ -16,7 +16,9 @@ export default function PublicLayout() {
     const { itemCount } = useCart();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const companyId = searchParams.get('companyId') || import.meta.env.VITE_COMPANY_ID || '';
+    const companySlug = searchParams.get('slug') || '';
+    const companyIdParam = searchParams.get('companyId') || '';
+    const [resolvedCompanyId, setResolvedCompanyId] = useState(companyIdParam || import.meta.env.VITE_COMPANY_ID || '');
     const activeCategory = searchParams.get('category') || '';
     const [categories, setCategories] = useState<string[]>([]);
     const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
@@ -24,34 +26,51 @@ export default function PublicLayout() {
     const [searchValue, setSearchValue] = useState('');
     const searchRef = useRef<HTMLInputElement>(null);
 
-    // Cargar datos públicos de la empresa
+    // Resolve catalog tenant from slug/companyId to keep header and nav in sync.
     useEffect(() => {
-        if (!companyId) return;
-        fetch(`${API_URL}/settings/public/${companyId}`)
+        if (companySlug) {
+            fetch(`${API_URL}/settings/public/by-slug/${encodeURIComponent(companySlug)}`)
+                .then(r => r.ok ? r.json() : null)
+                .then(data => {
+                    if (data) {
+                        setResolvedCompanyId(data.id || '');
+                        setCompanyInfo({ name: data.name, logoUrl: data.logoUrl, whatsappPhone: data.whatsappPhone });
+                    }
+                })
+                .catch(() => {});
+            return;
+        }
+
+        const fallbackId = companyIdParam || import.meta.env.VITE_COMPANY_ID || '';
+        setResolvedCompanyId(fallbackId);
+        if (!fallbackId) return;
+        fetch(`${API_URL}/settings/public/${fallbackId}`)
             .then(r => r.ok ? r.json() : null)
             .then(data => { if (data) setCompanyInfo({ name: data.name, logoUrl: data.logoUrl, whatsappPhone: data.whatsappPhone }); })
             .catch(() => {});
-    }, [companyId]);
+    }, [companySlug, companyIdParam]);
 
     // Cargar categorías reales del catálogo para el nav del header
     useEffect(() => {
         const load = async () => {
             try {
-                const data = await getPublicCatalog(companyId || 'demo', { page: 1 } as any);
+                if (!resolvedCompanyId) return;
+                const data = await getPublicCatalog(resolvedCompanyId, { page: 1 } as any);
                 const prods: Product[] = data?.products ?? (Array.isArray(data) ? data : []);
                 const cats = Array.from(new Set(prods.map((p: Product) => p.category).filter(Boolean))) as string[];
                 setCategories(cats.sort());
             } catch { /* silent */ }
         };
         load();
-    }, [companyId]);
+    }, [resolvedCompanyId]);
 
     // Cerrar menú móvil al cambiar de ruta
     useEffect(() => { setMobileMenuOpen(false); }, [searchParams]);
 
     const buildUrl = (params: Record<string, string>) => {
         const p = new URLSearchParams();
-        if (companyId) p.set('companyId', companyId);
+        if (companySlug) p.set('slug', companySlug);
+        else if (resolvedCompanyId) p.set('companyId', resolvedCompanyId);
         Object.entries(params).forEach(([k, v]) => { if (v) p.set(k, v); });
         return `/?${p.toString()}`;
     };
@@ -89,7 +108,7 @@ export default function PublicLayout() {
 
                         {/* 2. Logo */}
                         <div className="flex-shrink-0 flex items-center">
-                            <Link to={companyId ? `/?companyId=${companyId}` : '/'} className="flex items-center hover:opacity-80 transition-opacity">
+                            <Link to={buildUrl({})} className="flex items-center hover:opacity-80 transition-opacity">
                                 {companyInfo?.logoUrl ? (
                                     <img src={companyInfo.logoUrl} alt={companyInfo.name} className="h-10 sm:h-14 w-auto object-contain" />
                                 ) : (
@@ -148,7 +167,7 @@ export default function PublicLayout() {
                                 <UserIcon className="h-5 w-5 sm:h-6 sm:w-6" />
                             </Link>
 
-                            <Link to={companyId ? `/cart?companyId=${companyId}` : '/cart'} className="relative group p-1" title="Mi Carrito">
+                            <Link to={companySlug ? `/cart?slug=${encodeURIComponent(companySlug)}` : (resolvedCompanyId ? `/cart?companyId=${resolvedCompanyId}` : '/cart')} className="relative group p-1" title="Mi Carrito">
                                 <ShoppingBagIcon className="h-5 w-5 sm:h-6 sm:w-6 text-stone-700 group-hover:text-stone-900 transition-colors" />
                                 {itemCount > 0 && (
                                     <span className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center text-[9px] font-bold text-white bg-stone-900 rounded-full">
@@ -176,7 +195,7 @@ export default function PublicLayout() {
                         </form>
                         {/* All products */}
                         <button
-                            onClick={() => navigate(companyId ? `/?companyId=${companyId}` : '/')}
+                            onClick={() => navigate(buildUrl({}))}
                             className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${!activeCategory ? 'bg-stone-900 text-white' : 'text-stone-700 hover:bg-stone-50'
                                 }`}
                         >
@@ -221,8 +240,8 @@ export default function PublicLayout() {
                         <div className="space-y-3">
                             <p className="text-[10px] tracking-widest uppercase text-stone-400 font-semibold">Navegación</p>
                             <div className="flex flex-col gap-2">
-                                <Link to="/" className="text-xs text-stone-500 hover:text-stone-900 transition-colors">Catálogo</Link>
-                                <Link to="/cart" className="text-xs text-stone-500 hover:text-stone-900 transition-colors">Mi Pedido</Link>
+                                <Link to={buildUrl({})} className="text-xs text-stone-500 hover:text-stone-900 transition-colors">Catálogo</Link>
+                                <Link to={companySlug ? `/cart?slug=${encodeURIComponent(companySlug)}` : (resolvedCompanyId ? `/cart?companyId=${resolvedCompanyId}` : '/cart')} className="text-xs text-stone-500 hover:text-stone-900 transition-colors">Mi Pedido</Link>
                                 <Link to="/privacidad" className="text-xs text-stone-500 hover:text-stone-900 transition-colors">Aviso de Privacidad</Link>
                             </div>
                         </div>
