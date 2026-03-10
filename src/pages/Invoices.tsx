@@ -6,6 +6,7 @@ import { formatMXN, formatDate } from '../utils/format';
 import { useToast } from '../context/ToastContext';
 import { getErrorMessage } from '../services/api';
 import Pagination from '../components/Pagination';
+import { useSearchParams } from 'react-router-dom';
 
 const statusMap: Record<string, { label: string; style: string }> = {
     valid: { label: 'Vigente', style: 'bg-green-50 text-green-700 border-green-200' },
@@ -14,19 +15,41 @@ const statusMap: Record<string, { label: string; style: string }> = {
 };
 
 export default function Invoices() {
+    const [urlParams, setUrlParams] = useSearchParams();
+    const initialPage = Math.max(1, parseInt(urlParams.get('page') || '1', 10) || 1);
+    const initialSearch = urlParams.get('search') || '';
+    const initialStatus = urlParams.get('status') || '';
+    const initialDateFrom = urlParams.get('dateFrom') || '';
+    const initialDateTo = urlParams.get('dateTo') || '';
+
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [loading, setLoading] = useState(true);
-    const [page, setPage] = useState(1);
-    const [search, setSearch] = useState('');
-    const [status, setStatus] = useState('');
-    const [dateFrom, setDateFrom] = useState('');
-    const [dateTo, setDateTo] = useState('');
+    const [page, setPage] = useState(initialPage);
+    const [search, setSearch] = useState(initialSearch);
+    const [status, setStatus] = useState(initialStatus);
+    const [dateFrom, setDateFrom] = useState(initialDateFrom);
+    const [dateTo, setDateTo] = useState(initialDateTo);
     const [pagination, setPagination] = useState<InvoicePagination | null>(null);
     const { showToast } = useToast();
 
     useEffect(() => {
-        setPage(1);
+        setPage((prev) => (prev === 1 ? prev : 1));
     }, [search, status, dateFrom, dateTo]);
+
+    useEffect(() => {
+        const nextParams = new URLSearchParams();
+        if (page > 1) nextParams.set('page', String(page));
+        if (search.trim()) nextParams.set('search', search.trim());
+        if (status.trim()) nextParams.set('status', status.trim());
+        if (dateFrom.trim()) nextParams.set('dateFrom', dateFrom.trim());
+        if (dateTo.trim()) nextParams.set('dateTo', dateTo.trim());
+
+        const current = urlParams.toString();
+        const next = nextParams.toString();
+        if (current !== next) {
+            setUrlParams(nextParams, { replace: true });
+        }
+    }, [page, search, status, dateFrom, dateTo, urlParams, setUrlParams]);
 
     useEffect(() => {
         const load = async () => {
