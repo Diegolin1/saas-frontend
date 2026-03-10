@@ -55,8 +55,10 @@ export default function Layout() {
     const [avatarOpen, setAvatarOpen] = useState(false)
     const avatarRef = useRef<HTMLDivElement>(null)
 
-    // Fetch pending orders count for notification bell
+    // Fetch pending orders count for notification bell (solo roles de gestión)
     useEffect(() => {
+        const role = user?.role;
+        if (!role || role === 'BUYER') return; // BUYER no llama a dashboard/stats
         const fetchPending = async () => {
             try {
                 const res = await api.get('/dashboard/stats')
@@ -64,9 +66,9 @@ export default function Layout() {
             } catch { /* silent */ }
         }
         fetchPending()
-        const interval = setInterval(fetchPending, 60000) // refresh every minute
+        const interval = setInterval(fetchPending, 60000)
         return () => clearInterval(interval)
-    }, [])
+    }, [user?.role])
 
     // Close avatar dropdown on outside click
     useEffect(() => {
@@ -332,19 +334,21 @@ export default function Layout() {
                             </div>
 
                             <div className="flex items-center gap-x-2">
-                                {/* Notification bell */}
-                                <Link
-                                    to="/admin/orders"
-                                    className="group relative p-2 text-stone-400 hover:text-stone-600 rounded-lg hover:bg-slate-50 transition-colors"
-                                    title="Pedidos pendientes"
-                                >
-                                    <BellIcon className="h-5 w-5" aria-hidden="true" />
-                                    {pendingCount > 0 && (
-                                        <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white animate-pulse">
-                                            {pendingCount > 9 ? '9+' : pendingCount}
-                                        </span>
-                                    )}
-                                </Link>
+                                {/* Notification bell — solo para roles de gestión */}
+                                {user?.role !== 'BUYER' && (
+                                    <Link
+                                        to="/admin/orders"
+                                        className="group relative p-2 text-stone-400 hover:text-stone-600 rounded-lg hover:bg-slate-50 transition-colors"
+                                        title="Pedidos pendientes"
+                                    >
+                                        <BellIcon className="h-5 w-5" aria-hidden="true" />
+                                        {pendingCount > 0 && (
+                                            <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white animate-pulse">
+                                                {pendingCount > 9 ? '9+' : pendingCount}
+                                            </span>
+                                        )}
+                                    </Link>
+                                )}
 
                                 {/* Cart */}
                                 <Link to="/cart" className="group relative p-2 text-stone-400 hover:text-stone-600 rounded-lg hover:bg-slate-50 transition-colors">
@@ -392,14 +396,17 @@ export default function Layout() {
                                                     {user?.role}
                                                 </span>
                                             </div>
-                                            <Link
-                                                to="/admin/settings"
-                                                onClick={() => setAvatarOpen(false)}
-                                                className="flex items-center gap-2 px-4 py-2.5 text-sm text-stone-600 hover:bg-slate-50 transition-colors"
-                                            >
-                                                <Cog6ToothIcon className="h-4 w-4 text-stone-400" />
-                                                Configuración
-                                            </Link>
+                                            {/* Configuración (solo roles de gestión) */}
+                                            {user?.role !== 'BUYER' && (
+                                                <Link
+                                                    to="/admin/settings"
+                                                    onClick={() => setAvatarOpen(false)}
+                                                    className="flex items-center gap-2 px-4 py-2.5 text-sm text-stone-600 hover:bg-slate-50 transition-colors"
+                                                >
+                                                    <Cog6ToothIcon className="h-4 w-4 text-stone-400" />
+                                                    Configuración
+                                                </Link>
+                                            )}
                                             <Link
                                                 to="/"
                                                 onClick={() => setAvatarOpen(false)}

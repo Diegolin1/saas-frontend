@@ -87,8 +87,10 @@ function App() {
                                     <Route element={<ProtectedRoute allowedRoles={['OWNER', 'ADMIN', 'SUPERVISOR', 'SELLER', 'BUYER']} />}>
                                         <Route path="/admin" element={<Layout />}>
 
-                                            {/* Common / Redirect Dashboard */}
-                                            <Route index element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
+                                            {/* Dashboard — solo roles de gestión. BUYER → redirigir a my-orders */}
+                                            <Route element={<ProtectedRoute allowedRoles={['OWNER', 'ADMIN', 'SUPERVISOR', 'SELLER']} />}>
+                                                <Route index element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
+                                            </Route>
 
                                             {/* Admin / Seller Routes */}
                                             <Route element={<ProtectedRoute allowedRoles={['OWNER', 'ADMIN', 'SUPERVISOR', 'SELLER']} />}>
@@ -107,7 +109,7 @@ function App() {
                                                 <Route path="settings" element={<ErrorBoundary><SettingsLayout /></ErrorBoundary>} />
                                             </Route>
 
-                                            {/* Buyer Routes */}
+                                            {/* Buyer Portal — rutas exclusivas del comprador */}
                                             <Route element={<ProtectedRoute allowedRoles={['BUYER']} />}>
                                                 <Route path="my-orders" element={<ErrorBoundary><Orders /></ErrorBoundary>} />
                                             </Route>

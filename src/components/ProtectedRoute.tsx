@@ -20,8 +20,8 @@ const ProtectedRoute = ({ allowedRoles }: { allowedRoles?: string[] }) => {
     }
 
     if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-        // Redirect to appropriate dashboard based on role
-        if (user.role === 'BUYER') return <Navigate to="/" replace />;
+        // Redirect to appropriate area based on role
+        if (user.role === 'BUYER') return <Navigate to="/admin/my-orders" replace />;
         if (user.role === 'SELLER') return <Navigate to="/admin/orders" replace />;
         return <Navigate to="/admin" replace />;
     }

@@ -27,6 +27,8 @@ export default function Catalog() {
     const [totalPages, setTotalPages] = useState(1)
     const [totalCount, setTotalCount] = useState(0)
     const [sort, setSort] = useState('newest')
+    // All unique categories derived from the catalog (for the visual carousel)
+    const [availableCategories, setAvailableCategories] = useState<string[]>([])
 
     // Quick-add feedback
     const [quickAdded, setQuickAdded] = useState<QuickAddFeedback>(null)
@@ -36,6 +38,21 @@ export default function Catalog() {
         const timer = setTimeout(() => setSearchQuery(searchInput), 350)
         return () => clearTimeout(timer)
     }, [searchInput])
+
+    // Load all available categories once (no filter) to populate the carousel
+    useEffect(() => {
+        const loadCategories = async () => {
+            try {
+                const data = await getPublicCatalog(companyId, { page: 1 } as any)
+                const prods: Product[] = data?.products ?? (Array.isArray(data) ? data : [])
+                const cats = Array.from(
+                    new Set(prods.map((p: Product) => p.category).filter(Boolean))
+                ) as string[]
+                setAvailableCategories(cats.sort())
+            } catch { /* silent — carousel queda vacío si falla */ }
+        }
+        loadCategories()
+    }, [companyId])
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
@@ -138,6 +155,7 @@ export default function Catalog() {
                 <VisualCategoryCarousel
                     selectedCategory={selectedCategory}
                     onSelect={setSelectedCategory}
+                    categories={availableCategories}
                 />
             </div>
 
