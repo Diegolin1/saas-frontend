@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 
+const APP_NAME = import.meta.env.VITE_APP_NAME || 'ShowRoom B2B';
+const LOGO_DARK = import.meta.env.VITE_LOGO_DARK_URL || null;
+
 const ResetPassword = () => {
     const { token } = useParams<{ token: string }>();
     const navigate = useNavigate();
@@ -55,9 +58,11 @@ const ResetPassword = () => {
                 <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-8 sm:p-10">
                     {/* Logo */}
                     <div className="text-center mb-8">
-                        <h1 className="text-2xl font-display font-bold text-brand-900">
-                            Show<span className="text-gold-500">Room</span>
-                        </h1>
+                        {LOGO_DARK ? (
+                            <img src={LOGO_DARK} alt={APP_NAME} className="h-10 mx-auto" />
+                        ) : (
+                            <h1 className="text-2xl font-display font-bold text-brand-900">{APP_NAME}</h1>
+                        )}
                     </div>
 
                     {success ? (

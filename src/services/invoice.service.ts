@@ -16,6 +16,13 @@ export interface Invoice {
     createdAt: string;
 }
 
+export interface InvoicePagination {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+}
+
 export interface CreateInvoiceData {
     orderId: string;
     paymentForm: string;
@@ -36,9 +43,12 @@ export const createInvoice = async (data: CreateInvoiceData): Promise<Invoice> =
     }
 };
 
-export const getInvoices = async (): Promise<Invoice[]> => {
+export const getInvoices = async (params?: { page?: number; limit?: number }): Promise<{ invoices: Invoice[]; pagination: InvoicePagination }> => {
     try {
-        const response = await api.get('/invoices');
+        const qs = new URLSearchParams();
+        if (params?.page) qs.set('page', String(params.page));
+        if (params?.limit) qs.set('limit', String(params.limit));
+        const response = await api.get(`/invoices${qs.toString() ? '?' + qs : ''}`);
         return response.data;
     } catch (error) {
         throw new Error(getErrorMessage(error));

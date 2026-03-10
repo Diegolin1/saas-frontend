@@ -1,7 +1,8 @@
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { XMarkIcon, ShoppingBagIcon, ReceiptPercentIcon } from '@heroicons/react/24/outline';
-import { Order } from '../services/order.service';
+import { useEffect, useState } from 'react';
+import { Order, OrderStatusHistoryEntry, getOrderStatusHistory } from '../services/order.service';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
     PENDING: { label: 'Pendiente', color: 'bg-yellow-50 text-yellow-700 ring-yellow-600/20' },
@@ -19,9 +20,20 @@ interface Props {
     order: (Order & { date: string; customerName: string }) | null;
     open: boolean;
     onClose: () => void;
+    canReorder?: boolean;
+    onReorder?: (order: Order & { date: string; customerName: string }) => void;
 }
 
-export default function OrderDetailDrawer({ order, open, onClose }: Props) {
+export default function OrderDetailDrawer({ order, open, onClose, canReorder = false, onReorder }: Props) {
+    const [history, setHistory] = useState<OrderStatusHistoryEntry[]>([]);
+
+    useEffect(() => {
+        if (!open || !order?.id) return;
+        getOrderStatusHistory(order.id)
+            .then((data) => setHistory(data.history || []))
+            .catch(() => setHistory([]));
+    }, [open, order?.id]);
+
     if (!order) return null;
 
     const st = STATUS_MAP[order.status] || STATUS_MAP.PENDING;
@@ -59,6 +71,18 @@ export default function OrderDetailDrawer({ order, open, onClose }: Props) {
                                                 <span className="text-xs text-stone-400">
                                                     {new Date(order.date).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
                                                 </span>
+                                                {canReorder && onReorder && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const confirmed = window.confirm('Se creará un nuevo pedido con los mismos productos. ¿Deseas continuar?');
+                                                            if (confirmed) onReorder(order);
+                                                        }}
+                                                        className="ml-auto rounded-md bg-white/10 px-2.5 py-1 text-xs font-semibold text-white hover:bg-white/20"
+                                                    >
+                                                        Reordenar
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
 
@@ -118,6 +142,42 @@ export default function OrderDetailDrawer({ order, open, onClose }: Props) {
                                                     </div>
                                                 </div>
                                             )}
+
+                                            {/* Status timeline */}
+                                            <div>
+                                                <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">
+                                                    Historial de estado
+                                                </p>
+                                                {history.length === 0 ? (
+                                                    <div className="text-xs text-stone-400 bg-slate-50 border border-slate-200 rounded-xl p-3">
+                                                        Sin historial disponible.
+                                                    </div>
+                                                ) : (
+                                                    <ol className="space-y-3">
+                                                        {history.map((entry, idx) => {
+                                                            const nodeStatus = STATUS_MAP[entry.status] || STATUS_MAP.PENDING;
+                                                            const isLast = idx === history.length - 1;
+                                                            return (
+                                                                <li key={entry.id} className="relative pl-6">
+                                                                    {!isLast && <span className="absolute left-[9px] top-5 h-[calc(100%+6px)] w-px bg-slate-200" />}
+                                                                    <span className="absolute left-0 top-1.5 h-4 w-4 rounded-full bg-white ring-2 ring-brand-500" />
+                                                                    <div className="rounded-lg border border-slate-200 bg-white p-3">
+                                                                        <div className="flex items-center justify-between gap-2">
+                                                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ring-1 ring-inset ${nodeStatus.color}`}>
+                                                                                {nodeStatus.label}
+                                                                            </span>
+                                                                            <span className="text-[11px] text-slate-400">
+                                                                                {new Date(entry.createdAt).toLocaleString('es-MX')}
+                                                                            </span>
+                                                                        </div>
+                                                                        {entry.notes && <p className="mt-2 text-xs text-slate-600">{entry.notes}</p>}
+                                                                    </div>
+                                                                </li>
+                                                            );
+                                                        })}
+                                                    </ol>
+                                                )}
+                                            </div>
 
                                             {/* Totals */}
                                             <div className="bg-stone-50 rounded-xl border border-stone-200 overflow-hidden">

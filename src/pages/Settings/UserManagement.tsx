@@ -46,7 +46,7 @@ const UserManagement = () => {
             setUsers(data.users);
             setPagination(data.pagination);
         } catch (err) {
-            console.error(err);
+            showToast(getErrorMessage(err, 'Error al cargar los usuarios'), 'error');
         } finally {
             setLoading(false);
         }

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useSearchParams, useOutletContext } from 'react-router-dom'
 import { getPublicCatalog, Product } from '../../services/product.service'
+import { getCompanyBySlug } from '../../services/settings.service'
 import { MagnifyingGlassIcon, ShoppingBagIcon, CheckIcon } from '@heroicons/react/24/outline'
 import { formatMXN } from '../../utils/format'
 import { useCart } from '../../context/CartContext'
@@ -16,9 +17,26 @@ export default function Catalog() {
     const [error, setError] = useState<string | null>(null)
     const [usedCompanyId, setUsedCompanyId] = useState<string>('')
     const [searchParams] = useSearchParams()
-    const companyId = searchParams.get('companyId') || import.meta.env.VITE_COMPANY_ID || 'demo'
+    const slugParam = searchParams.get('slug')
+    const directCompanyId = searchParams.get('companyId') || import.meta.env.VITE_COMPANY_ID || 'demo'
+    const [resolvedCompanyId, setResolvedCompanyId] = useState<string | null>(slugParam ? null : directCompanyId)
     const { isB2BUnlocked, unlockB2B, addToCart } = useCart()
     const [showModal, setShowModal] = useState(false)
+
+    // Resolve slug → companyId once on mount / slug change
+    useEffect(() => {
+        if (!slugParam) {
+            setResolvedCompanyId(directCompanyId)
+            return
+        }
+        let cancelled = false
+        getCompanyBySlug(slugParam)
+            .then(info => { if (!cancelled) setResolvedCompanyId(info.id) })
+            .catch(() => { if (!cancelled) setError('Catálogo no encontrado.') })
+        return () => { cancelled = true }
+    }, [slugParam, directCompanyId])
+
+    const companyId = resolvedCompanyId ?? ''
 
     // Search, filter, pagination state
     const [searchQuery, setSearchQuery] = useState('')
@@ -53,22 +71,12 @@ export default function Catalog() {
     }, [searchParams])
 
     // Load all available categories once (no filter) to populate the carousel
-    useEffect(() => {
-        const loadCategories = async () => {
-            try {
-                const data = await getPublicCatalog(companyId, { page: 1 } as any)
-                const prods: Product[] = data?.products ?? (Array.isArray(data) ? data : [])
-                const cats = Array.from(
-                    new Set(prods.map((p: Product) => p.category).filter(Boolean))
-                ) as string[]
-                setAvailableCategories(cats.sort())
-            } catch { /* silent — carousel queda vacío si falla */ }
-        }
-        loadCategories()
-    }, [companyId])
+    // Categories are returned by the first main load — no extra fetch needed (FUNC-08)
+    // The main load effect sets availableCategories when page === 1
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
+        if (!companyId) return  // wait for slug resolution
         let cancelled = false
         const load = async () => {
             try {
@@ -86,6 +94,10 @@ export default function Catalog() {
                     setProducts(prev => page === 1 ? data.products : [...prev, ...data.products])
                     setTotalPages(data.pagination?.totalPages || 1)
                     setTotalCount(prevCount => data.pagination?.total || (page === 1 ? data.products.length : prevCount + data.products.length))
+                    // FUNC-08: populate category carousel from first-page response
+                    if (page === 1 && Array.isArray(data.categories) && data.categories.length > 0) {
+                        setAvailableCategories((data.categories as string[]).sort())
+                    }
                 } else if (Array.isArray(data)) {
                     setProducts(prev => page === 1 ? data : [...prev, ...data])
                     setTotalPages(1)

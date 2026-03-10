@@ -3,6 +3,10 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
+const APP_NAME = import.meta.env.VITE_APP_NAME || 'ShowRoom B2B';
+const LOGO_LIGHT = import.meta.env.VITE_LOGO_LIGHT_URL || null;
+const LOGO_DARK = import.meta.env.VITE_LOGO_DARK_URL || null;
+
 const Register = () => {
     const [formData, setFormData] = useState({
         rfc: '',
@@ -53,6 +57,14 @@ const Register = () => {
             setError('La contraseña debe tener al menos 8 caracteres.');
             return;
         }
+        if (!/[A-Z]/.test(formData.password)) {
+            setError('La contraseña debe contener al menos una letra mayúscula.');
+            return;
+        }
+        if (!/[0-9]/.test(formData.password)) {
+            setError('La contraseña debe contener al menos un número.');
+            return;
+        }
 
         setLoading(true);
         try {
@@ -80,7 +92,11 @@ const Register = () => {
             <div className="hidden lg:flex lg:w-1/2 relative bg-stone-900 items-center justify-center p-12 overflow-hidden">
                 <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.08),transparent_50%)]" />
                 <div className="relative z-10 max-w-sm space-y-10 text-center">
-                    <img src="/assets/logo-light.png" alt="Cuero Firme" className="h-20 w-auto mx-auto" />
+                    {LOGO_LIGHT ? (
+                        <img src={LOGO_LIGHT} alt={APP_NAME} className="h-20 w-auto mx-auto" />
+                    ) : (
+                        <p className="text-2xl font-bold tracking-widest uppercase text-white">{APP_NAME}</p>
+                    )}
 
                     <div className="space-y-4">
                         <h1 className="text-2xl font-semibold text-white leading-tight tracking-wide">
@@ -113,7 +129,11 @@ const Register = () => {
                 <div className="w-full max-w-md mx-auto">
                     {/* Mobile logo */}
                     <div className="lg:hidden mb-10 text-center">
-                        <img src="/assets/logo-dark.png" alt="Cuero Firme" className="h-12 w-auto mx-auto" />
+                        {LOGO_DARK ? (
+                            <img src={LOGO_DARK} alt={APP_NAME} className="h-12 w-auto mx-auto" />
+                        ) : (
+                            <p className="text-xl font-bold tracking-widest uppercase text-stone-900">{APP_NAME}</p>
+                        )}
                     </div>
 
                     <div className="space-y-2 mb-8">

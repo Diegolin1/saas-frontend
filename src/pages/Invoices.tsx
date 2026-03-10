@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { SkeletonPage } from '../components/Skeleton';
-import { getInvoices, downloadInvoicePdf, downloadInvoiceXml, type Invoice } from '../services/invoice.service';
+import { getInvoices, downloadInvoicePdf, downloadInvoiceXml, type Invoice, type InvoicePagination } from '../services/invoice.service';
 import { DocumentTextIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import { formatMXN, formatDate } from '../utils/format';
+import { useToast } from '../context/ToastContext';
+import { getErrorMessage } from '../services/api';
+import Pagination from '../components/Pagination';
 
 const statusMap: Record<string, { label: string; style: string }> = {
     valid: { label: 'Vigente', style: 'bg-green-50 text-green-700 border-green-200' },
@@ -13,21 +16,25 @@ const statusMap: Record<string, { label: string; style: string }> = {
 export default function Invoices() {
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+    const [page, setPage] = useState(1);
+    const [pagination, setPagination] = useState<InvoicePagination | null>(null);
+    const { showToast } = useToast();
 
     useEffect(() => {
         const load = async () => {
+            setLoading(true);
             try {
-                const data = await getInvoices();
-                setInvoices(data);
+                const data = await getInvoices({ page });
+                setInvoices(data.invoices);
+                setPagination(data.pagination);
             } catch (err: any) {
-                setError(err.message || 'Error al cargar facturas.');
+                showToast(getErrorMessage(err, 'Error al cargar facturas.'), 'error');
             } finally {
                 setLoading(false);
             }
         };
         load();
-    }, []);
+    }, [page]);
 
     if (loading) return <SkeletonPage />;
 
@@ -39,10 +46,6 @@ export default function Invoices() {
                     <p className="mt-1 text-sm text-slate-500">Consulta y descarga tus comprobantes fiscales digitales (CFDI).</p>
                 </div>
             </div>
-
-            {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">{error}</div>
-            )}
 
             {invoices.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-slate-200">
@@ -115,6 +118,15 @@ export default function Invoices() {
                         </table>
                     </div>
                 </div>
+            )}
+            {pagination && pagination.totalPages > 1 && (
+                <Pagination
+                    page={pagination.page}
+                    totalPages={pagination.totalPages}
+                    total={pagination.total}
+                    limit={pagination.limit}
+                    onPageChange={setPage}
+                />
             )}
         </div>
     );

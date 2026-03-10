@@ -35,7 +35,7 @@ export default function Products() {
             setProducts(data.products);
             setPagination(data.pagination);
         } catch (error) {
-            console.error('Error fetching products:', error);
+            showToast('Error al cargar productos. Intenta de nuevo.', 'error');
         } finally {
             setLoading(false);
         }

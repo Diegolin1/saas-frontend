@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { SkeletonPage } from '../components/Skeleton';
 import { getLeads, updateLead, Lead, LeadStatus, PaginationInfo } from '../services/lead.service';
 import { getUsers, User } from '../services/user.service';
@@ -22,6 +23,7 @@ const ALL_STATUSES: LeadStatus[] = ['NEW', 'CONTACTED', 'QUALIFIED', 'CONVERTED'
 
 export default function LeadsCRM() {
     const { showToast } = useToast();
+    const navigate = useNavigate();
     const [leads, setLeads] = useState<Lead[]>([]);
     const [sellers, setSellers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
@@ -81,6 +83,17 @@ export default function LeadsCRM() {
             showToast(sellerId ? 'Vendedor asignado correctamente.' : 'Vendedor desasignado.', 'success');
         } catch {
             showToast('Error al asignar vendedor.', 'error');
+        }
+    };
+
+    const handleConvertToCustomer = async (lead: Lead) => {
+        try {
+            await updateLead(lead.id, { status: 'CONVERTED' });
+            setLeads(prev => prev.map(l => l.id === lead.id ? { ...l, status: 'CONVERTED' as LeadStatus } : l));
+            showToast('Lead marcado como Convertido. Completa el registro del cliente.', 'success');
+            navigate(`/admin/customers?convert=${encodeURIComponent(lead.name || '')}&phone=${encodeURIComponent(lead.phone)}`);
+        } catch {
+            showToast('Error al convertir el lead.', 'error');
         }
     };
 
@@ -256,11 +269,12 @@ export default function LeadsCRM() {
                                                         </Tooltip>
                                                         {lead.status !== 'CONVERTED' && (
                                                             <Tooltip content="Convertir a cliente registrado">
-                                                                <a href={`/admin/customers?convert=${lead.name || ''}&phone=${lead.phone}`}
+                                                                <button
+                                                                    onClick={() => handleConvertToCustomer(lead)}
                                                                     className="inline-flex items-center gap-1 rounded-lg px-2.5 py-2 text-xs font-semibold bg-brand-50 text-brand-600 hover:bg-brand-100 transition-all">
                                                                     <UserCircleIcon className="h-4 w-4" />
                                                                     Convertir
-                                                                </a>
+                                                                </button>
                                                             </Tooltip>
                                                         )}
                                                     </div>

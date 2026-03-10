@@ -209,9 +209,13 @@ export default function PublicLayout() {
                 <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-12">
                         <div className="space-y-3">
-                            <img src="/assets/logo-dark.png" alt="Cuero Firme" className="h-10 w-auto opacity-80" />
+                            {companyInfo?.logoUrl ? (
+                                <img src={companyInfo.logoUrl} alt={companyInfo.name} className="h-10 w-auto opacity-80" />
+                            ) : (
+                                <p className="text-sm font-bold tracking-widest uppercase text-stone-700 opacity-80">{companyInfo?.name || 'ShowRoom B2B'}</p>
+                            )}
                             <p className="text-xs text-stone-400 leading-relaxed max-w-xs">
-                                Zapatos, bolsas y carteras de piel artesanal. Calidad mexicana para el mundo.
+                                Plataforma B2B mayoreo. Pedidos digitales 24/7.
                             </p>
                         </div>
                         <div className="space-y-3">
@@ -231,7 +235,7 @@ export default function PublicLayout() {
                     </div>
                     <div className="mt-10 pt-6 border-t border-stone-100 text-center">
                         <p className="text-[10px] tracking-widest uppercase text-stone-300">
-                            &copy; {new Date().getFullYear()} Cuero Firme &mdash; Todos los derechos reservados
+                            &copy; {new Date().getFullYear()} {companyInfo?.name || 'ShowRoom B2B'} &mdash; Todos los derechos reservados
                         </p>
                     </div>
                 </div>

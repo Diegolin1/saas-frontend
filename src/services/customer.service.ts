@@ -11,6 +11,8 @@ export interface Customer {
     id: string;
     businessName: string;
     taxId?: string;
+    taxSystem?: string;
+    taxZipCode?: string;
     code?: string;
     creditLimit: number;
     currentBalance: number;

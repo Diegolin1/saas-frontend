@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { SkeletonPage } from '../components/Skeleton';
-import { DocumentTextIcon, ChevronDownIcon, FunnelIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import { DocumentTextIcon, ChevronDownIcon, FunnelIcon, ArrowDownTrayIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { exportToCSV } from '../utils/export';
 import { formatMXN } from '../utils/format';
-import { getOrders, updateOrderStatus, PaginationInfo, Order } from '../services/order.service';
+import { createOrder, getOrders, updateOrderStatus, PaginationInfo, Order } from '../services/order.service';
 import { createCheckoutSession } from '../services/payment.service';
 import { createInvoice, downloadInvoicePdf, downloadInvoiceXml, Invoice } from '../services/invoice.service';
 import { useAuth } from '../context/AuthContext';
@@ -39,6 +39,8 @@ export default function Orders() {
     const [page, setPage] = useState(1);
     const [pagination, setPagination] = useState<PaginationInfo | null>(null);
     const [statusFilter, setStatusFilter] = useState('');
+    const [searchInput, setSearchInput] = useState('');
+    const [searchText, setSearchText] = useState('');
     const { user } = useAuth();
     const canChangeStatus = user && ['OWNER', 'ADMIN', 'SUPERVISOR'].includes(user.role);
 
@@ -51,7 +53,7 @@ export default function Orders() {
 
     const fetchOrders = (p = page) => {
         setLoading(true);
-        getOrders({ page: p, status: statusFilter || undefined })
+        getOrders({ page: p, status: statusFilter || undefined, search: searchText || undefined })
             .then(data => {
                 const formatted = data.orders.map((o: any) => ({
                     ...o,
@@ -63,13 +65,33 @@ export default function Orders() {
                 setOrders(formatted);
                 setPagination(data.pagination);
             })
-            .catch(err => console.error(err))
+            .catch(() => showToast('Error al cargar los pedidos. Intenta de nuevo.', 'error'))
             .finally(() => setLoading(false));
     };
 
+    // Debounce search input
     useEffect(() => {
-        fetchOrders(1);
-        setPage(1);
+        const t = setTimeout(() => setSearchText(searchInput), 400);
+        return () => clearTimeout(t);
+    }, [searchInput]);
+
+    // When search text changes, reset to page 1 and fetch
+    useEffect(() => {
+        setPage(prev => {
+            if (prev !== 1) return 1;
+            fetchOrders(1);
+            return 1;
+        });
+    }, [searchText]);
+
+    // When the status filter changes, reset to page 1 and fetch.
+    // We guard in the page effect so it doesn't double-fetch on that reset.
+    useEffect(() => {
+        setPage(prev => {
+            if (prev !== 1) return 1; // page effect will fire and fetch
+            fetchOrders(1);           // page is already 1, fetch directly
+            return 1;
+        });
     }, [statusFilter]);
 
     useEffect(() => {
@@ -127,6 +149,30 @@ export default function Orders() {
         }
     };
 
+    const handleReorder = async (order: Order & { date: string; customerName: string; invoiced?: boolean; invoiceData?: Invoice }) => {
+        try {
+            const items = order.items.map((item) => ({
+                productId: item.productId,
+                variantId: item.variantId || undefined,
+                size: item.size,
+                color: item.color,
+                quantity: item.quantity,
+            }));
+
+            await createOrder({
+                customerId: order.customerId,
+                items,
+                notes: `Reordenado desde pedido #${order.orderNumber}`
+            });
+
+            showToast('Pedido reordenado correctamente.', 'success');
+            setPage(1);
+            fetchOrders(1);
+        } catch (error: any) {
+            showToast(error.message || 'No se pudo reordenar el pedido.', 'error');
+        }
+    };
+
     const handleDownload = async (invoiceId: string, type: 'pdf' | 'xml', uuid?: string) => {
         try {
             if (type === 'pdf') {
@@ -176,6 +222,17 @@ export default function Orders() {
 
             {/* Filter bar */}
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                {/* Search input */}
+                <div className="relative flex-shrink-0 sm:w-64">
+                    <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <input
+                        type="text"
+                        value={searchInput}
+                        onChange={e => setSearchInput(e.target.value)}
+                        placeholder="Buscar pedido, cliente…"
+                        className="w-full pl-9 pr-3 py-1.5 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                    />
+                </div>
                 <div className="flex items-center gap-2 overflow-x-auto">
                     <FunnelIcon className="h-4 w-4 text-slate-400 flex-shrink-0" />
                     <button onClick={() => setStatusFilter('')}
@@ -316,6 +373,12 @@ export default function Orders() {
                                                     ) : (
                                                         <div className="flex flex-col flex-wrap justify-end gap-2 items-end">
                                                             <button
+                                                                onClick={() => handleReorder(order)}
+                                                                className="text-slate-600 hover:text-slate-900 font-medium text-xs border border-slate-300 rounded px-2 py-1 bg-white hover:bg-slate-50 transition-colors"
+                                                            >
+                                                                Reordenar
+                                                            </button>
+                                                            <button
                                                                 onClick={() => showToast('Se ha notificado a tu proveedor para enviar la factura correspondiente.', 'success')}
                                                                 className="text-slate-500 hover:text-slate-800 font-medium text-xs border border-slate-300 rounded px-2 py-1 bg-white hover:bg-slate-50 transition-colors"
                                                             >
@@ -420,6 +483,8 @@ export default function Orders() {
                 order={selectedOrder}
                 open={!!selectedOrder}
                 onClose={() => setSelectedOrder(null)}
+                canReorder={user?.role === 'BUYER'}
+                onReorder={handleReorder}
             />
         </div>
     );

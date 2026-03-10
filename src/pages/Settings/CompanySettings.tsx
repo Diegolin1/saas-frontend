@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { getSettings, updateSettings, CompanySettings } from '../../services/settings.service';
+import { getSettings, updateSettings, updateSlug, CompanySettings } from '../../services/settings.service';
 import { getErrorMessage } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
-import { BuildingOffice2Icon, PhoneIcon, MapPinIcon, TagIcon, PhotoIcon } from '@heroicons/react/24/outline';
+import { BuildingOffice2Icon, PhoneIcon, MapPinIcon, TagIcon, PhotoIcon, LinkIcon } from '@heroicons/react/24/outline';
 import { uploadLogo } from '../../services/upload.service';
 
 const MEXICAN_STATES = [
@@ -28,6 +28,8 @@ export default function CompanySettingsPage() {
     const [logoUrl, setLogoUrl] = useState('');
     const [uploadingLogo, setUploadingLogo] = useState(false);
     const logoInputRef = useRef<HTMLInputElement>(null);
+    const [slugName, setSlugName] = useState('');
+    const [savingSlug, setSavingSlug] = useState(false);
 
     // Address fields
     const [street, setStreet] = useState('');
@@ -53,6 +55,7 @@ export default function CompanySettingsPage() {
             setCurrency(s.currency || 'MXN');
             setCategoriesText((s.categories || []).join(', '));
             setLogoUrl(s.logoUrl || '');
+            setSlugName(data.slugName || '');
 
             const addr = data.address || {};
             setStreet(addr.street || '');
@@ -64,6 +67,19 @@ export default function CompanySettingsPage() {
             showToast(getErrorMessage(err, 'Error al cargar configuración.'), 'error');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleSlugSave = async () => {
+        setSavingSlug(true);
+        try {
+            const result = await updateSlug(slugName.trim());
+            setSlugName(result.slugName || '');
+            showToast('URL del catálogo actualizada.', 'success');
+        } catch (err) {
+            showToast(getErrorMessage(err, 'Error al guardar el slug.'), 'error');
+        } finally {
+            setSavingSlug(false);
         }
     };
 
@@ -337,6 +353,50 @@ export default function CompanySettingsPage() {
                             placeholder="Calzado, Accesorios, Bolsos, Cinturones"
                         />
                         <p className="mt-1 text-xs text-gray-400">Ej: Calzado Dama, Calzado Caballero, Bolsos, Accesorios</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Catalog URL (Slug) */}
+            <div className="bg-white shadow rounded-lg">
+                <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
+                    <div className="flex items-center gap-3">
+                        <LinkIcon className="h-5 w-5 text-brand-500" />
+                        <h3 className="text-base font-semibold text-gray-900">URL de tu Catálogo Público</h3>
+                    </div>
+                    <p className="mt-1 text-sm text-gray-500">Define una dirección personalizada para compartir tu catálogo.</p>
+                </div>
+                <div className="px-4 py-5 sm:p-6 space-y-3">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Slug (solo letras, números y guiones)</label>
+                        <div className="mt-1 flex rounded-lg shadow-sm">
+                            <span className="inline-flex items-center rounded-l-lg border border-r-0 border-gray-300 bg-gray-50 px-3 text-sm text-gray-500 select-none">
+                                {window.location.origin}/?slug=
+                            </span>
+                            <input
+                                type="text"
+                                value={slugName}
+                                onChange={e => setSlugName(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-'))}
+                                maxLength={60}
+                                className="block w-full min-w-0 flex-1 rounded-none rounded-r-lg border-gray-300 focus:border-brand-500 focus:ring-brand-500 sm:text-sm border p-2.5"
+                                placeholder="mi-empresa"
+                            />
+                        </div>
+                        {slugName && (
+                            <p className="mt-1 text-xs text-brand-600 font-mono">
+                                {window.location.origin}/?slug={slugName}
+                            </p>
+                        )}
+                    </div>
+                    <div className="flex justify-end">
+                        <button
+                            type="button"
+                            disabled={savingSlug}
+                            onClick={handleSlugSave}
+                            className="inline-flex justify-center rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-600 disabled:opacity-50 transition-colors"
+                        >
+                            {savingSlug ? 'Guardando...' : 'Guardar URL'}
+                        </button>
                     </div>
                 </div>
             </div>

@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react';
 import { SkeletonPage } from '../components/Skeleton';
-import { getPriceLists, createPriceList, deletePriceList, getPriceListItems, upsertProductPrice, removeProductPrice, PriceList } from '../services/priceList.service';
+import { getPriceLists, createPriceList, updatePriceList, deletePriceList, getPriceListItems, upsertProductPrice, removeProductPrice, PriceList } from '../services/priceList.service';
 import { getErrorMessage } from '../services/api';
 import { Dialog } from '@headlessui/react';
-import { PlusIcon, EyeIcon, XMarkIcon, TrashIcon, MagnifyingGlassIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, EyeIcon, XMarkIcon, TrashIcon, MagnifyingGlassIcon, ExclamationTriangleIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 import { getProducts } from '../services/product.service';
 import { useToast } from '../context/ToastContext';
-
-const formatMXN = (n: number) =>
-    new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(n);
+import { formatMXN } from '../utils/format';
 
 export default function PriceLists() {
     const { showToast } = useToast();
@@ -20,6 +18,8 @@ export default function PriceLists() {
     const [listItems, setListItems] = useState<any[]>([]);
     const [products, setProducts] = useState<any[]>([]);
     const [confirmDelete, setConfirmDelete] = useState<PriceList | null>(null);
+    const [editingList, setEditingList] = useState<PriceList | null>(null);
+    const [editForm, setEditForm] = useState({ name: '', currency: 'MXN' });
 
     // Forms
     const [newListData, setNewListData] = useState({ name: '', currency: 'MXN' });
@@ -32,7 +32,7 @@ export default function PriceLists() {
             const data = await getPriceLists();
             setLists(data);
         } catch (error) {
-            console.error(error);
+            showToast(getErrorMessage(error, 'Error al cargar las listas de precios'), 'error');
         } finally {
             setLoading(false);
         }
@@ -43,7 +43,7 @@ export default function PriceLists() {
             try {
                 const data = await getProducts();
                 setProducts(data.products ?? []);
-            } catch (e) { console.error(e); }
+            } catch (e) { showToast(getErrorMessage(e, 'Error al cargar productos'), 'error'); }
         }
     }
 
@@ -113,6 +113,24 @@ export default function PriceLists() {
         }
     };
 
+    const openEditModal = (list: PriceList) => {
+        setEditingList(list);
+        setEditForm({ name: list.name, currency: list.currency });
+    };
+
+    const handleEditList = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingList) return;
+        try {
+            await updatePriceList(editingList.id, editForm);
+            setEditingList(null);
+            loadLists();
+            showToast('Lista actualizada correctamente', 'success');
+        } catch (error) {
+            showToast(getErrorMessage(error, 'Error al actualizar la lista'), 'error');
+        }
+    };
+
     const handleDeleteList = async (list: PriceList) => {
         if (list.isDefault) {
             showToast('No se puede eliminar la lista predeterminada.', 'warning');
@@ -178,6 +196,13 @@ export default function PriceLists() {
                                     >
                                         <EyeIcon className="h-4 w-4" />
                                         Ver Precios
+                                    </button>
+                                    <button
+                                        onClick={() => openEditModal(list)}
+                                        className="inline-flex items-center gap-1 rounded-md bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                                        title="Editar lista"
+                                    >
+                                        <PencilSquareIcon className="h-4 w-4" />
                                     </button>
                                     {!list.isDefault && (
                                         <button
@@ -320,6 +345,35 @@ export default function PriceLists() {
                                 </table>
                             )}
                         </div>
+                    </Dialog.Panel>
+                </div>
+            </Dialog>
+
+            {/* Edit List Modal */}
+            <Dialog open={!!editingList} onClose={() => setEditingList(null)} className="relative z-50">
+                <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+                <div className="fixed inset-0 flex items-center justify-center p-4">
+                    <Dialog.Panel className="mx-auto max-w-sm rounded bg-white p-6 w-full shadow-xl">
+                        <Dialog.Title className="text-lg font-medium mb-4">Editar Lista de Precios</Dialog.Title>
+                        <form onSubmit={handleEditList} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Nombre</label>
+                                <input type="text" required className="mt-1 block w-full rounded border-gray-300 border p-2 shadow-sm"
+                                    value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Moneda</label>
+                                <select className="mt-1 block w-full rounded border-gray-300 border p-2 shadow-sm"
+                                    value={editForm.currency} onChange={e => setEditForm({ ...editForm, currency: e.target.value })}>
+                                    <option value="MXN">MXN</option>
+                                    <option value="USD">USD</option>
+                                </select>
+                            </div>
+                            <div className="flex justify-end gap-2 mt-4">
+                                <button type="button" onClick={() => setEditingList(null)} className="px-4 py-2 border border-slate-200 rounded-lg text-sm text-stone-700 hover:bg-slate-50">Cancelar</button>
+                                <button type="submit" className="px-4 py-2 bg-stone-900 text-white rounded-lg text-sm font-semibold hover:bg-stone-800 transition-colors">Guardar</button>
+                            </div>
+                        </form>
                     </Dialog.Panel>
                 </div>
             </Dialog>

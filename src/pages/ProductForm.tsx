@@ -8,6 +8,8 @@ import { getSettings } from '../services/settings.service';
 import ImageUploader from '../components/ImageUploader';
 
 const DEFAULT_CATEGORIES = ['Botas', 'Tenis', 'Sandalias', 'Zapatos Formales', 'Accesorios'];
+const SIZE_OPTIONS = ['22', '23', '24', '25', '26', '27', '28', '29'];
+const COLOR_OPTIONS = ['Negro', 'Blanco', 'Café', 'Azul', 'Rojo', 'Beige'];
 
 const ProductForm = () => {
     const navigate = useNavigate();
@@ -21,6 +23,7 @@ const ProductForm = () => {
         description: '',
         category: '',
         price: '',
+        satKey: '',
         images: [''] // Start with one empty image field
     });
     const [feedback, setFeedback] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
@@ -28,6 +31,9 @@ const ProductForm = () => {
     const [variants, setVariants] = useState([
         { size: '25', color: 'Negro', stock: 10 }
     ]);
+    const [matrixSizes, setMatrixSizes] = useState<string[]>(['25']);
+    const [matrixColors, setMatrixColors] = useState<string[]>(['Negro']);
+    const [matrixStock, setMatrixStock] = useState<number>(10);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -45,6 +51,30 @@ const ProductForm = () => {
 
     const removeVariant = (index: number) => {
         setVariants(variants.filter((_, i) => i !== index));
+    };
+
+    const toggleMatrixSize = (size: string) => {
+        setMatrixSizes(prev => prev.includes(size) ? prev.filter(s => s !== size) : [...prev, size]);
+    };
+
+    const toggleMatrixColor = (color: string) => {
+        setMatrixColors(prev => prev.includes(color) ? prev.filter(c => c !== color) : [...prev, color]);
+    };
+
+    const generateVariantMatrix = () => {
+        if (matrixSizes.length === 0 || matrixColors.length === 0) {
+            setFeedback({ message: 'Selecciona al menos una talla y un color para generar variantes.', type: 'warning' });
+            return;
+        }
+
+        const generated = matrixSizes.flatMap(size => matrixColors.map(color => ({
+            size,
+            color,
+            stock: Math.max(0, Math.floor(Number(matrixStock) || 0))
+        })));
+
+        setVariants(generated);
+        setFeedback({ message: `Se generaron ${generated.length} variantes.`, type: 'success' });
     };
 
     useEffect(() => {
@@ -77,6 +107,7 @@ const ProductForm = () => {
                     description: existing.description || '',
                     category: existing.category || 'Botas',
                     price: finalPrice !== '' && finalPrice !== null ? String(finalPrice) : '',
+                    satKey: existing.satKey || '',
                     images: (existing.images || []).map((img: ProductImage) => img.url) || ['']
                 });
                 setVariants(
@@ -85,7 +116,6 @@ const ProductForm = () => {
                         : [{ size: '25', color: 'Negro', stock: 10 }]
                 );
             } catch (error: unknown) {
-                console.error('Error cargando producto:', error);
                 setFeedback({ message: 'No se pudo cargar el producto para editar.', type: 'error' });
             }
         };
@@ -145,6 +175,7 @@ const ProductForm = () => {
                 description: formData.description.trim(),
                 category: formData.category,
                 price: parseFloat(formData.price),
+                satKey: formData.satKey.trim() || undefined,
                 images: formData.images.filter(url => url.trim() !== ''),
                 variants: variants.map(v => ({
                     size: v.size.trim(),
@@ -163,7 +194,6 @@ const ProductForm = () => {
                 navigate('/admin/products');
             }, 2000);
         } catch (error: unknown) {
-            console.error('Error creating product:', error);
             const errorMessage = getErrorMessage(error, 'Error al crear producto. Intenta de nuevo.');
             setFeedback({ message: errorMessage, type: 'error' });
         } finally {
@@ -223,6 +253,14 @@ const ProductForm = () => {
                         </div>
 
                         <div className="sm:col-span-3">
+                            <label className="block text-sm font-medium text-slate-700">Clave SAT <span className="text-slate-400 font-normal">(ClaveProdServ CFDI)</span></label>
+                            <input type="text" name="satKey" value={formData.satKey} onChange={handleChange}
+                                placeholder="01010101"
+                                className="mt-1 block w-full rounded-lg border-slate-200 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border p-2.5" />
+                            <p className="mt-1 text-xs text-slate-400">Opcional. Si se omite se usará 01010101 (genérico).</p>
+                        </div>
+
+                        <div className="sm:col-span-3">
                             <label className="block text-sm font-medium text-slate-700">Precio Base (MXN)</label>
                             <div className="relative mt-1">
                                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
@@ -257,6 +295,71 @@ const ProductForm = () => {
                             <PlusIcon className="-ml-0.5 mr-2 h-4 w-4" aria-hidden="true" />
                             Agregar Variante
                         </button>
+                    </div>
+
+                    <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 space-y-4">
+                        <div>
+                            <p className="text-sm font-bold text-amber-900">Generador rápido de variantes</p>
+                            <p className="text-xs text-amber-700 mt-1">Selecciona tallas y colores para generar automáticamente la matriz completa.</p>
+                        </div>
+
+                        <div>
+                            <p className="text-xs font-semibold text-slate-700 mb-2">Tallas</p>
+                            <div className="flex flex-wrap gap-2">
+                                {SIZE_OPTIONS.map(size => (
+                                    <button
+                                        key={size}
+                                        type="button"
+                                        onClick={() => toggleMatrixSize(size)}
+                                        className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${matrixSizes.includes(size)
+                                                ? 'bg-brand-500 text-white border-brand-500'
+                                                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                                            }`}
+                                    >
+                                        {size}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div>
+                            <p className="text-xs font-semibold text-slate-700 mb-2">Colores</p>
+                            <div className="flex flex-wrap gap-2">
+                                {COLOR_OPTIONS.map(color => (
+                                    <button
+                                        key={color}
+                                        type="button"
+                                        onClick={() => toggleMatrixColor(color)}
+                                        className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${matrixColors.includes(color)
+                                                ? 'bg-brand-500 text-white border-brand-500'
+                                                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                                            }`}
+                                    >
+                                        {color}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+                            <div className="sm:w-48">
+                                <label className="block text-xs font-bold text-slate-700">Stock inicial por combinación</label>
+                                <input
+                                    type="number"
+                                    min={0}
+                                    value={matrixStock}
+                                    onChange={(e) => setMatrixStock(Number(e.target.value))}
+                                    className="mt-1 block w-full rounded-lg border-slate-200 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border p-2.5"
+                                />
+                            </div>
+                            <button
+                                type="button"
+                                onClick={generateVariantMatrix}
+                                className="inline-flex items-center justify-center rounded-lg border border-transparent bg-amber-600 py-2.5 px-4 text-sm font-bold text-white shadow-sm hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-all"
+                            >
+                                Generar matriz
+                            </button>
+                        </div>
                     </div>
 
                     <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">

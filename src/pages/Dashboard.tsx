@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
-import { CurrencyDollarIcon, ShoppingCartIcon, UsersIcon, SparklesIcon, QrCodeIcon, ArrowTopRightOnSquareIcon, RocketLaunchIcon, ChartBarIcon } from '@heroicons/react/24/outline'
+import { useEffect, useState, useCallback } from 'react'
+import { CurrencyDollarIcon, ShoppingCartIcon, UsersIcon, SparklesIcon, QrCodeIcon, ArrowTopRightOnSquareIcon, RocketLaunchIcon, ChartBarIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
 import { getDashboardStats, getTopProducts, getLowStockProducts, getSalesByDay } from '../services/dashboard.service'
 import { SkeletonCard, SkeletonChart } from '../components/Skeleton'
-import { Link } from 'react-router-dom'
+import { Link, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Tooltip } from '../components/Tooltip'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts'
@@ -46,29 +46,31 @@ export default function Dashboard() {
     const [salesByDay, setSalesByDay] = useState<SalesDay[]>([])
     const [loading, setLoading] = useState(true)
     const { user } = useAuth()
+    const { companyName } = (useOutletContext<{ companyName: string; companyLogoUrl: string | null }>()) ?? {}
+
+    const fetchData = useCallback(async () => {
+        setLoading(true)
+        try {
+            const [statsData, topData, lowData, salesData] = await Promise.allSettled([
+                getDashboardStats(),
+                getTopProducts(),
+                getLowStockProducts(),
+                getSalesByDay()
+            ])
+            setStats(statsData.status === 'fulfilled' ? (statsData.value || defaultStats) : defaultStats)
+            setTopProducts(topData.status === 'fulfilled' ? (topData.value || []) : [])
+            setLowStock(lowData.status === 'fulfilled' ? (lowData.value || []) : [])
+            setSalesByDay(salesData.status === 'fulfilled' ? (salesData.value || []) : [])
+        } catch {
+            setStats(defaultStats)
+        } finally {
+            setLoading(false)
+        }
+    }, [])
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [statsData, topData, lowData, salesData] = await Promise.allSettled([
-                    getDashboardStats(),
-                    getTopProducts(),
-                    getLowStockProducts(),
-                    getSalesByDay()
-                ])
-                setStats(statsData.status === 'fulfilled' ? (statsData.value || defaultStats) : defaultStats)
-                setTopProducts(topData.status === 'fulfilled' ? (topData.value || []) : [])
-                setLowStock(lowData.status === 'fulfilled' ? (lowData.value || []) : [])
-                setSalesByDay(salesData.status === 'fulfilled' ? (salesData.value || []) : [])
-            } catch (error) {
-                console.error('Error loading dashboard:', error)
-                setStats(defaultStats)
-            } finally {
-                setLoading(false)
-            }
-        }
         fetchData()
-    }, [])
+    }, [fetchData])
 
     if (loading) return (
         <div className="max-w-7xl mx-auto space-y-8 animate-fade-in">
@@ -130,6 +132,15 @@ export default function Dashboard() {
 
                 {/* Global Quick Action Mejorado con Tooltips */}
                 <div className="flex items-center gap-3">
+                    <button
+                        onClick={fetchData}
+                        disabled={loading}
+                        className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 shadow-sm border border-slate-200 hover:bg-slate-50 transition-all focus:outline-none disabled:opacity-50"
+                        title="Actualizar datos"
+                    >
+                        <ArrowPathIcon className={`w-4 h-4 text-slate-400 ${loading ? 'animate-spin' : ''}`} />
+                        Actualizar
+                    </button>
                     <Tooltip content="Comparte este enlace con tus clientes mayoristas para que accedan a tu catálogo digital.">
                         <button
                             onClick={() => navigator.clipboard.writeText(window.location.origin)}
@@ -163,7 +174,7 @@ export default function Dashboard() {
                             <RocketLaunchIcon className="w-10 h-10 text-brand-500" />
                         </div>
                         <h2 className="text-2xl sm:text-3xl font-display font-bold text-slate-900 tracking-tight mb-3">
-                            Bienvenido a Cuero Firme
+                            Bienvenido a {companyName || 'ShowRoom B2B'}
                         </h2>
                         <p className="text-base text-slate-500 mb-8 leading-relaxed">
                             Tu catálogo B2B está listo. <span className="text-brand-600 font-semibold">¿Listo para tu primer pedido?</span> Sube tu producto estrella y comparte tu enlace para empezar a recibir pedidos por WhatsApp hoy mismo.

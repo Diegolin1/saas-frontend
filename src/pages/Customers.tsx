@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { SkeletonPage } from '../components/Skeleton';
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer, Customer, PaginationInfo } from '../services/customer.service';
 import { getPriceLists, PriceList } from '../services/priceList.service';
@@ -37,6 +38,7 @@ interface AddressForm {
 
 export default function Customers() {
     const { showToast } = useToast();
+    const [searchParams, setSearchParams] = useSearchParams();
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [priceLists, setPriceLists] = useState<PriceList[]>([]);
     const [users, setUsers] = useState<User[]>([]); // State for users
@@ -52,6 +54,8 @@ export default function Customers() {
     const [formData, setFormData] = useState<Partial<Customer>>({
         businessName: '',
         taxId: '',
+        taxSystem: '',
+        taxZipCode: '',
         code: '',
         creditLimit: 0,
         priceListId: '',
@@ -61,6 +65,29 @@ export default function Customers() {
         street: '', extNumber: '', intNumber: '', neighborhood: '', zipCode: '', city: '', state: ''
     });
     const [rfcError, setRfcError] = useState('');
+
+    // Auto-open modal pre-filled when arriving from lead conversion
+    useEffect(() => {
+        const convertName = searchParams.get('convert');
+        const convertPhone = searchParams.get('phone');
+        if (convertName || convertPhone) {
+            setCurrentCustomer(null);
+            setFormData({
+                businessName: convertName || '',
+                taxId: '',
+                taxSystem: '',
+                taxZipCode: '',
+                code: '',
+                creditLimit: 0,
+                priceListId: '',
+                sellerId: ''
+            });
+            setAddressForm({ street: '', extNumber: '', intNumber: '', neighborhood: '', zipCode: '', city: '', state: '' });
+            setIsModalOpen(true);
+            // Clear params so refreshing doesn't re-open the modal
+            setSearchParams({});
+        }
+    }, []);
 
     // Debounce search
     useEffect(() => {
@@ -84,7 +111,7 @@ export default function Customers() {
             setPriceLists(priceListsData);
             setUsers(usersRes.users);
         } catch (error) {
-            console.error('Error al cargar datos:', error);
+            showToast(getErrorMessage(error, 'Error al cargar los datos'), 'error');
         } finally {
             setLoading(false);
         }
@@ -101,6 +128,8 @@ export default function Customers() {
             setFormData({
                 businessName: customer.businessName,
                 taxId: customer.taxId || '',
+                taxSystem: customer.taxSystem || '',
+                taxZipCode: customer.taxZipCode || '',
                 code: customer.code || '',
                 creditLimit: customer.creditLimit,
                 priceListId: customer.priceListId || '',
@@ -121,6 +150,8 @@ export default function Customers() {
             setFormData({
                 businessName: '',
                 taxId: '',
+                taxSystem: '',
+                taxZipCode: '',
                 code: '',
                 creditLimit: 0,
                 priceListId: '',
@@ -338,6 +369,43 @@ export default function Customers() {
                                         placeholder="XAXX010101000"
                                     />
                                     {rfcError && <p className="mt-1 text-xs text-red-600">{rfcError}</p>}
+                                </div>
+                            </div>
+
+                            {/* Datos Fiscales SAT */}
+                            <div className="border-t border-slate-200 pt-5">
+                                <h4 className="text-sm font-bold text-slate-700 mb-3">Datos Fiscales (para facturación CFDI)</h4>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700">Régimen Fiscal SAT</label>
+                                        <select
+                                            className="mt-1 block w-full rounded-lg border-slate-200 border p-2.5 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm"
+                                            value={formData.taxSystem}
+                                            onChange={e => setFormData({ ...formData, taxSystem: e.target.value })}
+                                        >
+                                            <option value="">— Seleccionar régimen —</option>
+                                            <option value="601">601 - General de Ley Personas Morales</option>
+                                            <option value="603">603 - Personas Morales con Fines no Lucrativos</option>
+                                            <option value="606">606 - Arrendamiento</option>
+                                            <option value="612">612 - Personas Físicas con Act. Empresariales</option>
+                                            <option value="616">616 - Sin obligaciones fiscales</option>
+                                            <option value="621">621 - Incorporación Fiscal</option>
+                                            <option value="625">625 - Plataformas Tecnológicas</option>
+                                            <option value="626">626 - Régimen Simplificado de Confianza (RESICO)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700">C.P. Fiscal</label>
+                                        <input
+                                            type="text"
+                                            maxLength={5}
+                                            placeholder="00000"
+                                            className="mt-1 block w-full rounded-lg border-slate-200 border p-2.5 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm"
+                                            value={formData.taxZipCode}
+                                            onChange={e => setFormData({ ...formData, taxZipCode: e.target.value.replace(/\D/g, '').slice(0, 5) })}
+                                        />
+                                        <p className="mt-1 text-xs text-slate-400">Código postal del domicilio fiscal registrado ante el SAT.</p>
+                                    </div>
                                 </div>
                             </div>
 

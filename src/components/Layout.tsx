@@ -54,6 +54,16 @@ export default function Layout() {
     const [pendingCount, setPendingCount] = useState(0)
     const [avatarOpen, setAvatarOpen] = useState(false)
     const avatarRef = useRef<HTMLDivElement>(null)
+    const [companyName, setCompanyName] = useState<string>('')
+    const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null)
+
+    // Fetch company settings once for logo + name
+    useEffect(() => {
+        api.get('/settings').then(res => {
+            if (res.data?.name) setCompanyName(res.data.name)
+            if (res.data?.settings?.logoUrl) setCompanyLogoUrl(res.data.settings.logoUrl)
+        }).catch(() => {})
+    }, [user?.companyId])
 
     // Fetch pending orders count for notification bell (solo roles de gestión)
     useEffect(() => {
@@ -154,9 +164,11 @@ export default function Layout() {
             <div className={`flex h-20 shrink-0 items-center border-b border-stone-700/50 ${isCollapsed ? 'justify-center px-0' : 'justify-center px-2'}`}>
                 <Link to="/admin" className="hover:opacity-80 transition-opacity flex items-center justify-center w-full">
                     {isCollapsed ? (
-                        <span className="text-lg font-display font-black text-white">CF</span>
+                        <span className="text-lg font-display font-black text-white">{(companyName || 'SB')[0].toUpperCase()}{(companyName || '').split(' ')[1]?.[0]?.toUpperCase() || ''}</span>
+                    ) : companyLogoUrl ? (
+                        <img src={companyLogoUrl} alt={companyName} className="h-[3.25rem] w-auto object-contain brightness-200" />
                     ) : (
-                        <img src="/assets/logo-light.png" alt="Cuero Firme" className="h-[3.25rem] w-auto object-contain" />
+                        <span className="text-sm font-bold tracking-widest uppercase text-white text-center leading-tight">{companyName || 'ShowRoom B2B'}</span>
                     )}
                 </Link>
             </div>
@@ -433,7 +445,7 @@ export default function Layout() {
 
                     <main className="flex-1 overflow-y-auto bg-slate-50 relative">
                         <div className="px-4 py-8 sm:px-6 lg:px-8">
-                            <Outlet />
+                            <Outlet context={{ companyName, companyLogoUrl }} />
                         </div>
                     </main>
                 </div>

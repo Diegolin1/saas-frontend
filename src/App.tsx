@@ -4,6 +4,7 @@ import { CartProvider } from './context/CartContext'
 import { ToastProvider } from './context/ToastContext'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import Layout from './components/Layout'
+import BuyerLayout from './components/BuyerLayout'
 import PublicLayout from './components/PublicLayout'
 import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -29,6 +30,9 @@ const Promotions = lazy(() => import('./pages/Promotions'))
 const Invoices = lazy(() => import('./pages/Invoices'))
 const SettingsLayout = lazy(() => import('./pages/Settings/Layout'))
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'))
+const BuyerOrders = lazy(() => import('./pages/buyer/BuyerOrders'))
+const BuyerInvoices = lazy(() => import('./pages/buyer/BuyerInvoices'))
+const BuyerCatalog = lazy(() => import('./pages/buyer/BuyerCatalog'))
 
 // ── Loading fallback ─────────────────────────────────────────────
 function PageLoader() {
@@ -111,9 +115,19 @@ function App() {
 
                                             {/* Buyer Portal — rutas exclusivas del comprador */}
                                             <Route element={<ProtectedRoute allowedRoles={['BUYER']} />}>
-                                                <Route path="my-orders" element={<ErrorBoundary><Orders /></ErrorBoundary>} />
+                                                <Route path="my-orders" element={<Navigate to="/buyer/orders" replace />} />
                                             </Route>
 
+                                        </Route>
+                                    </Route>
+
+                                    {/* BUYER PORTAL */}
+                                    <Route element={<ProtectedRoute allowedRoles={['BUYER']} />}>
+                                        <Route path="/buyer" element={<BuyerLayout />}>
+                                            <Route index element={<Navigate to="orders" replace />} />
+                                            <Route path="orders" element={<ErrorBoundary><BuyerOrders /></ErrorBoundary>} />
+                                            <Route path="invoices" element={<ErrorBoundary><BuyerInvoices /></ErrorBoundary>} />
+                                            <Route path="catalog" element={<ErrorBoundary><BuyerCatalog /></ErrorBoundary>} />
                                         </Route>
                                     </Route>
 

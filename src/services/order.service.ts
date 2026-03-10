@@ -26,6 +26,7 @@ export interface CreateOrderData {
 export interface OrderItem {
     id: string;
     productId: string;
+    variantId?: string | null;
     size: string;
     color: string;
     quantity: number;
@@ -54,16 +55,26 @@ export interface Order {
     updatedAt: string;
 }
 
+export interface OrderStatusHistoryEntry {
+    id: string;
+    orderId: string;
+    status: string;
+    notes?: string | null;
+    createdBy?: string | null;
+    createdAt: string;
+}
+
 export const createOrder = async (orderData: CreateOrderData) => {
     const response = await api.post('/orders', orderData);
     return response.data;
 };
 
-export const getOrders = async (params?: { page?: number; limit?: number; status?: string }): Promise<{ orders: Order[]; pagination: PaginationInfo }> => {
+export const getOrders = async (params?: { page?: number; limit?: number; status?: string; search?: string }): Promise<{ orders: Order[]; pagination: PaginationInfo }> => {
     const searchParams = new URLSearchParams();
     if (params?.page) searchParams.set('page', String(params.page));
     if (params?.limit) searchParams.set('limit', String(params.limit));
     if (params?.status) searchParams.set('status', params.status);
+    if (params?.search) searchParams.set('search', params.search);
     const qs = searchParams.toString();
     const response = await api.get(`/orders${qs ? '?' + qs : ''}`);
     return response.data;
@@ -71,5 +82,10 @@ export const getOrders = async (params?: { page?: number; limit?: number; status
 
 export const updateOrderStatus = async (id: string, status: string) => {
     const response = await api.put(`/orders/${id}/status`, { status });
+    return response.data;
+};
+
+export const getOrderStatusHistory = async (id: string): Promise<{ history: OrderStatusHistoryEntry[] }> => {
+    const response = await api.get(`/orders/${id}/status-history`);
     return response.data;
 };

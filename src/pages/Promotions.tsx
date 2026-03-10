@@ -21,7 +21,7 @@ export default function Promotions() {
             const data = await getPromotions();
             setPromotions(data);
         } catch (err) {
-            console.error(err);
+            showToast(getErrorMessage(err, 'Error al cargar las promociones'), 'error');
         } finally {
             setLoading(false);
         }
@@ -32,10 +32,21 @@ export default function Promotions() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+
+        const discountValue = parseFloat(formData.discount);
+        if (isNaN(discountValue) || discountValue <= 0) {
+            setError('El descuento debe ser mayor a 0.');
+            return;
+        }
+        if (formData.type === 'PERCENTAGE' && discountValue > 100) {
+            setError('El porcentaje de descuento no puede superar el 100%.');
+            return;
+        }
+
         try {
             await createPromotion({
-                code: formData.code,
-                discount: parseFloat(formData.discount),
+                code: formData.code.trim().toUpperCase(),
+                discount: discountValue,
                 type: formData.type,
                 expiresAt: formData.expiresAt || undefined,
                 usageLimit: formData.usageLimit ? parseInt(formData.usageLimit) : null,
@@ -188,6 +199,7 @@ export default function Promotions() {
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700">Descuento</label>
                                     <input type="number" step="0.01" required min="0.01"
+                                        max={formData.type === 'PERCENTAGE' ? 100 : undefined}
                                         className="mt-1 block w-full rounded-lg border border-slate-200 p-2.5 shadow-sm text-sm focus:border-brand-500 focus:ring-brand-500"
                                         value={formData.discount} onChange={e => setFormData({ ...formData, discount: e.target.value })} />
                                 </div>
