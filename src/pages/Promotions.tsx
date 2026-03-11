@@ -113,7 +113,7 @@ export default function Promotions() {
                         <p className="text-slate-400 text-sm mt-1">Crea tu primer cupón de descuento.</p>
                     </div>
                 ) : (
-                    <div className="overflow-hidden shadow-sm ring-1 ring-slate-200 sm:rounded-xl">
+                    <div className="overflow-x-auto shadow-sm ring-1 ring-slate-200 sm:rounded-xl">
                         <table className="min-w-full divide-y divide-slate-200">
                             <thead className="bg-slate-50">
                                 <tr>

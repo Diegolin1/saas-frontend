@@ -124,12 +124,12 @@ export default function Layout() {
         const sellerNav = [
             { name: 'Ir al Catálogo', href: '/', icon: ShoppingBagIcon },
             { name: 'CRM Leads', href: '/admin/leads', icon: UsersIcon },
+            { name: 'Clientes', href: '/admin/customers', icon: UsersIcon },
             { name: 'Pedidos', href: '/admin/orders', icon: ClipboardDocumentListIcon },
         ];
         const adminNav = [
             ...sellerNav,
             { name: 'Productos', href: '/admin/products', icon: TagIcon },
-            { name: 'Clientes', href: '/admin/customers', icon: UsersIcon },
             { name: 'Listas de Precio', href: '/admin/price-lists', icon: CurrencyDollarIcon },
             { name: 'Promociones', href: '/admin/promotions', icon: GiftIcon },
             { name: 'Facturación', href: '/admin/invoices', icon: DocumentTextIcon },

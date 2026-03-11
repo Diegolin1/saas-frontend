@@ -120,6 +120,10 @@ function App() {
                                                     <Route path="promotions" element={<ErrorBoundary><Promotions /></ErrorBoundary>} />
                                                     <Route path="invoices" element={<ErrorBoundary><Invoices /></ErrorBoundary>} />
                                                     <Route path="reports" element={<ErrorBoundary><Reports /></ErrorBoundary>} />
+                                                </Route>
+
+                                                {/* Settings / Onboarding — Solo administradores plenos */}
+                                                <Route element={<ProtectedRoute allowedRoles={['OWNER', 'ADMIN']} />}>
                                                     <Route path="settings" element={<ErrorBoundary><SettingsLayout /></ErrorBoundary>} />
                                                     <Route path="onboarding" element={<ErrorBoundary><OnboardingWizard /></ErrorBoundary>} />
                                                 </Route>

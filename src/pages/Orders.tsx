@@ -396,7 +396,7 @@ export default function Orders() {
                                 <p className="text-xs text-slate-400 mt-1 max-w-xs text-center">Los pedidos de tus clientes aparecerán aquí cuando realicen compras en tu catálogo.</p>
                             </div>
                         ) : (
-                            <div className="overflow-hidden shadow-sm ring-1 ring-slate-200 sm:rounded-xl">
+                            <div className="overflow-x-auto shadow-sm ring-1 ring-slate-200 sm:rounded-xl">
                                 <table className="min-w-full divide-y divide-slate-200">
                                     <thead className="bg-slate-50">
                                         <tr>

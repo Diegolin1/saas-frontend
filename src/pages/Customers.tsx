@@ -276,7 +276,7 @@ export default function Customers() {
             <div className="mt-8 flow-root">
                 <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
                     <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-                        <div className="overflow-hidden shadow-sm ring-1 ring-slate-200 sm:rounded-xl">
+                        <div className="overflow-x-auto shadow-sm ring-1 ring-slate-200 sm:rounded-xl">
                             <table className="min-w-full divide-y divide-slate-200">
                                 <thead className="bg-slate-50">
                                     <tr>
