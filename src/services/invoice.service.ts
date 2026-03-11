@@ -74,29 +74,25 @@ export const getInvoices = async (params?: GetInvoicesParams): Promise<{ invoice
 
 export const downloadInvoicePdf = async (invoiceId: string, uuid?: string): Promise<void> => {
     try {
-        const response = await api.get(`/invoices/${invoiceId}/pdf`, { responseType: 'blob' });
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `Factura_${uuid || invoiceId}.pdf`);
-        document.body.appendChild(link);
-        link.click();
-        link.parentNode?.removeChild(link);
+        const response = await api.get(`/invoices/${invoiceId}/pdf`);
+        if (response.data && response.data.url) {
+            window.open(response.data.url, '_blank', 'noopener,noreferrer');
+        } else {
+            throw new Error('URL de PDF no disponible');
+        }
     } catch (error) {
-        throw new Error('Error al descargar el PDF de la factura.');
+        throw new Error('Error al abrir el PDF de la factura.');
     }
 };
 
 export const downloadInvoiceXml = async (invoiceId: string, uuid?: string): Promise<void> => {
     try {
-        const response = await api.get(`/invoices/${invoiceId}/xml`, { responseType: 'blob' });
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `Factura_${uuid || invoiceId}.xml`);
-        document.body.appendChild(link);
-        link.click();
-        link.parentNode?.removeChild(link);
+        const response = await api.get(`/invoices/${invoiceId}/xml`);
+        if (response.data && response.data.url) {
+            window.open(response.data.url, '_blank', 'noopener,noreferrer');
+        } else {
+            throw new Error('URL de XML no disponible');
+        }
     } catch (error) {
         throw new Error('Error al descargar el XML de la factura.');
     }
