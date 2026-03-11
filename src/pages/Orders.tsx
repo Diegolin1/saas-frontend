@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, memo } from 'react';
 import { SkeletonPage } from '../components/Skeleton';
-import { DocumentTextIcon, ChevronDownIcon, FunnelIcon, ArrowDownTrayIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { DocumentTextIcon, ChevronDownIcon, FunnelIcon, ArrowDownTrayIcon, MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { formatMXN } from '../utils/format';
 import { createOrder, downloadOrdersCsv, getOrders, updateOrderStatus, PaginationInfo, Order } from '../services/order.service';
 import { createCheckoutSession } from '../services/payment.service';
@@ -10,6 +10,7 @@ import Pagination from '../components/Pagination';
 import { useToast } from '../context/ToastContext';
 import { Dialog } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { Link } from 'react-router-dom';
 import OrderDetailDrawer from '../components/OrderDetailDrawer';
 
 const ORDER_STATUSES = ['PENDING', 'PRODUCTION', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
@@ -29,6 +30,128 @@ const statusLabels: Record<string, string> = {
     DELIVERED: 'Entregado',
     CANCELLED: 'Cancelado',
 };
+
+const OrderRow = memo(({
+    order,
+    canChangeStatus,
+    updatingId,
+    handleStatusChange,
+    setSelectedOrder,
+    handleInvoiceClick,
+    handleDownload,
+    handleCheckout,
+    handleReorder,
+    showToast
+}: {
+    order: any,
+    canChangeStatus: boolean,
+    updatingId: string | null,
+    handleStatusChange: (id: string, s: string) => void,
+    setSelectedOrder: (o: any) => void,
+    handleInvoiceClick: (id: string) => void,
+    handleDownload: (id: string, type: 'pdf' | 'xml', uuid?: string) => void,
+    handleCheckout: (id: string) => void,
+    handleReorder: (o: any) => void,
+    showToast: (msg: string, type: any) => void
+}) => (
+    <tr className="hover:bg-slate-50/50 transition-colors">
+        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-slate-900 sm:pl-6 cursor-pointer hover:text-brand-600 transition-colors" onClick={() => setSelectedOrder(order)}>
+            #{order.orderNumber}
+        </td>
+        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{order.customerName}</td>
+        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{order.date}</td>
+        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+            {canChangeStatus ? (
+                <div className="relative inline-block">
+                    <select
+                        value={order.status}
+                        disabled={updatingId === order.id}
+                        onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                        className={`appearance-none pr-8 pl-2.5 py-1 rounded-full text-xs font-semibold border-0 cursor-pointer ring-1 ring-inset focus:ring-2 focus:ring-brand-500 ${statusStyles[order.status] || 'bg-slate-100 text-slate-800'}`}
+                    >
+                        {ORDER_STATUSES.map(s => (
+                            <option key={s} value={s}>{statusLabels[s]}</option>
+                        ))}
+                    </select>
+                    <ChevronDownIcon className="h-3 w-3 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-60" />
+                </div>
+            ) : (
+                <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold leading-5 ring-1 ring-inset ${statusStyles[order.status] || 'bg-slate-100 text-slate-800'}`}>
+                    {statusLabels[order.status] || order.status}
+                </span>
+            )}
+        </td>
+        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
+            {formatMXN(order.subtotal)}
+        </td>
+        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+            {formatMXN(order.taxAmount || 0)}
+        </td>
+        <td className="whitespace-nowrap px-3 py-4 text-sm font-bold text-gray-900">
+            {formatMXN(order.total)}
+        </td>
+        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+            {order.discountAmount > 0 ? (
+                <span className="inline-flex items-center gap-1">
+                    <span className="inline-flex rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
+                        {order.promotionCode}
+                    </span>
+                    <span className="text-green-600 font-medium">
+                        -{formatMXN(order.discountAmount)}
+                    </span>
+                </span>
+            ) : (
+                <span className="text-gray-400">—</span>
+            )}
+        </td>
+        <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+            {order.invoiced && order.invoiceData ? (
+                <div className="flex flex-col items-end gap-1">
+                    <span className="text-green-600 flex items-center justify-end gap-1 text-xs font-semibold">
+                        <DocumentTextIcon className="h-4 w-4" />
+                        Facturado
+                    </span>
+                    <div className="flex gap-2 text-xs">
+                        <button onClick={() => handleDownload(order.invoiceData!.id, 'pdf', order.invoiceData!.uuid)} className="text-indigo-600 hover:text-indigo-900 border border-indigo-200 rounded px-2 py-0.5 bg-indigo-50">PDF</button>
+                        <button onClick={() => handleDownload(order.invoiceData!.id, 'xml', order.invoiceData!.uuid)} className="text-blue-600 hover:text-blue-900 border border-blue-200 rounded px-2 py-0.5 bg-blue-50">XML</button>
+                    </div>
+                    {!canChangeStatus && order.status === 'PENDING' && (
+                        <button onClick={() => handleCheckout(order.id)} className="w-full text-center bg-slate-900 text-white rounded px-2 py-1 mt-1 text-[10px] font-bold hover:bg-slate-800 transition-colors">
+                            Pagar en Línea
+                        </button>
+                    )}
+                </div>
+            ) : canChangeStatus ? (
+                <button
+                    onClick={() => handleInvoiceClick(order.id)}
+                    className="text-indigo-600 hover:text-indigo-900 font-medium"
+                >
+                    Timbrar Factura
+                </button>
+            ) : (
+                <div className="flex flex-col flex-wrap justify-end gap-2 items-end">
+                    <button
+                        onClick={() => handleReorder(order)}
+                        className="text-slate-600 hover:text-slate-900 font-medium text-xs border border-slate-300 rounded px-2 py-1 bg-white hover:bg-slate-50 transition-colors"
+                    >
+                        Reordenar
+                    </button>
+                    <button
+                        onClick={() => showToast('Se ha notificado a tu proveedor para enviar la factura correspondiente.', 'success')}
+                        className="text-slate-500 hover:text-slate-800 font-medium text-xs border border-slate-300 rounded px-2 py-1 bg-white hover:bg-slate-50 transition-colors"
+                    >
+                        Solicitar Factura
+                    </button>
+                    {order.status === 'PENDING' && (
+                        <button onClick={() => handleCheckout(order.id)} className="bg-slate-900 text-white rounded px-3 py-1.5 text-xs font-bold hover:bg-slate-800 transition-colors shadow-sm w-full">
+                            Pagar en Línea
+                        </button>
+                    )}
+                </div>
+            )}
+        </td>
+    </tr>
+));
 
 export default function Orders() {
     const { showToast } = useToast();
@@ -107,7 +230,7 @@ export default function Orders() {
         } catch (error) {
             showToast('Error al actualizar el estado del pedido', 'error');
         } finally {
-            setUpdatingId(null);
+            setUpdatingId('' as any); // Or just use null if handled correctly in the component
         }
     };
 
@@ -196,29 +319,40 @@ export default function Orders() {
                         Gestiona tus pedidos y genera facturas fiscales (CFDI).
                     </p>
                 </div>
-                {(pagination?.total || 0) > 0 && (
-                    <button
-                        disabled={exportingCsv}
-                        onClick={async () => {
-                            try {
-                                setExportingCsv(true);
-                                await downloadOrdersCsv({
-                                    status: statusFilter || undefined,
-                                    search: searchText || undefined
-                                });
-                                showToast('CSV exportado correctamente.', 'success');
-                            } catch {
-                                showToast('Error al exportar el CSV de pedidos.', 'error');
-                            } finally {
-                                setExportingCsv(false);
-                            }
-                        }}
-                        className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                        <ArrowDownTrayIcon className="h-4 w-4" />
-                        {exportingCsv ? 'Exportando...' : 'Exportar CSV'}
-                    </button>
-                )}
+                <div className="flex items-center gap-3">
+                    {user && ['OWNER', 'ADMIN', 'SUPERVISOR', 'SELLER'].includes(user.role) && (
+                        <Link
+                            to="/admin/orders/new"
+                            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100"
+                        >
+                            <PlusIcon className="h-4 w-4" />
+                            Nuevo Pedido
+                        </Link>
+                    )}
+                    {(pagination?.total || 0) > 0 && (
+                        <button
+                            disabled={exportingCsv}
+                            onClick={async () => {
+                                try {
+                                    setExportingCsv(true);
+                                    await downloadOrdersCsv({
+                                        status: statusFilter || undefined,
+                                        search: searchText || undefined
+                                    });
+                                    showToast('CSV exportado correctamente.', 'success');
+                                } catch {
+                                    showToast('Error al exportar el CSV de pedidos.', 'error');
+                                } finally {
+                                    setExportingCsv(false);
+                                }
+                            }}
+                            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                            <ArrowDownTrayIcon className="h-4 w-4" />
+                            {exportingCsv ? 'Exportando...' : 'Exportar CSV'}
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Filter bar */}
@@ -297,103 +431,19 @@ export default function Orders() {
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 bg-white">
                                         {orders.map((order) => (
-                                            <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
-                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-slate-900 sm:pl-6 cursor-pointer hover:text-brand-600 transition-colors" onClick={() => setSelectedOrder(order)}>
-                                                    #{order.orderNumber}
-                                                </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{order.customerName}</td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{order.date}</td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                                    {canChangeStatus ? (
-                                                        <div className="relative inline-block">
-                                                            <select
-                                                                value={order.status}
-                                                                disabled={updatingId === order.id}
-                                                                onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                                                                className={`appearance-none pr-8 pl-2.5 py-1 rounded-full text-xs font-semibold border-0 cursor-pointer ring-1 ring-inset focus:ring-2 focus:ring-brand-500 ${statusStyles[order.status] || 'bg-slate-100 text-slate-800'}`}
-                                                            >
-                                                                {ORDER_STATUSES.map(s => (
-                                                                    <option key={s} value={s}>{statusLabels[s]}</option>
-                                                                ))}
-                                                            </select>
-                                                            <ChevronDownIcon className="h-3 w-3 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-60" />
-                                                        </div>
-                                                    ) : (
-                                                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold leading-5 ring-1 ring-inset ${statusStyles[order.status] || 'bg-slate-100 text-slate-800'}`}>
-                                                            {statusLabels[order.status] || order.status}
-                                                        </span>
-                                                    )}
-                                                </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
-                                                    {formatMXN(order.subtotal)}
-                                                </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                                    {formatMXN((order as any).taxAmount || 0)}
-                                                </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm font-bold text-gray-900">
-                                                    {formatMXN(order.total)}
-                                                </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                                    {order.discountAmount > 0 ? (
-                                                        <span className="inline-flex items-center gap-1">
-                                                            <span className="inline-flex rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
-                                                                {order.promotionCode}
-                                                            </span>
-                                                            <span className="text-green-600 font-medium">
-                                                                -{formatMXN(order.discountAmount)}
-                                                            </span>
-                                                        </span>
-                                                    ) : (
-                                                        <span className="text-gray-400">—</span>
-                                                    )}
-                                                </td>
-                                                <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                                                    {order.invoiced && order.invoiceData ? (
-                                                        <div className="flex flex-col items-end gap-1">
-                                                            <span className="text-green-600 flex items-center justify-end gap-1 text-xs font-semibold">
-                                                                <DocumentTextIcon className="h-4 w-4" />
-                                                                Facturado
-                                                            </span>
-                                                            <div className="flex gap-2 text-xs">
-                                                                <button onClick={() => handleDownload(order.invoiceData!.id, 'pdf', order.invoiceData!.uuid)} className="text-indigo-600 hover:text-indigo-900 border border-indigo-200 rounded px-2 py-0.5 bg-indigo-50">PDF</button>
-                                                                <button onClick={() => handleDownload(order.invoiceData!.id, 'xml', order.invoiceData!.uuid)} className="text-blue-600 hover:text-blue-900 border border-blue-200 rounded px-2 py-0.5 bg-blue-50">XML</button>
-                                                            </div>
-                                                            {!canChangeStatus && order.status === 'PENDING' && (
-                                                                <button onClick={() => handleCheckout(order.id)} className="w-full text-center bg-slate-900 text-white rounded px-2 py-1 mt-1 text-[10px] font-bold hover:bg-slate-800 transition-colors">
-                                                                    Pagar en Línea
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                    ) : canChangeStatus ? (
-                                                        <button
-                                                            onClick={() => handleInvoiceClick(order.id)}
-                                                            className="text-indigo-600 hover:text-indigo-900 font-medium"
-                                                        >
-                                                            Timbrar Factura
-                                                        </button>
-                                                    ) : (
-                                                        <div className="flex flex-col flex-wrap justify-end gap-2 items-end">
-                                                            <button
-                                                                onClick={() => handleReorder(order)}
-                                                                className="text-slate-600 hover:text-slate-900 font-medium text-xs border border-slate-300 rounded px-2 py-1 bg-white hover:bg-slate-50 transition-colors"
-                                                            >
-                                                                Reordenar
-                                                            </button>
-                                                            <button
-                                                                onClick={() => showToast('Se ha notificado a tu proveedor para enviar la factura correspondiente.', 'success')}
-                                                                className="text-slate-500 hover:text-slate-800 font-medium text-xs border border-slate-300 rounded px-2 py-1 bg-white hover:bg-slate-50 transition-colors"
-                                                            >
-                                                                Solicitar Factura
-                                                            </button>
-                                                            {order.status === 'PENDING' && (
-                                                                <button onClick={() => handleCheckout(order.id)} className="bg-slate-900 text-white rounded px-3 py-1.5 text-xs font-bold hover:bg-slate-800 transition-colors shadow-sm w-full">
-                                                                    Pagar en Línea
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </td>
-                                            </tr>
+                                            <OrderRow
+                                                key={order.id}
+                                                order={order}
+                                                canChangeStatus={!!canChangeStatus}
+                                                updatingId={updatingId}
+                                                handleStatusChange={handleStatusChange}
+                                                setSelectedOrder={setSelectedOrder}
+                                                handleInvoiceClick={handleInvoiceClick}
+                                                handleDownload={handleDownload}
+                                                handleCheckout={handleCheckout}
+                                                handleReorder={handleReorder}
+                                                showToast={showToast}
+                                            />
                                         ))}
                                     </tbody>
                                 </table>
@@ -419,7 +469,7 @@ export default function Orders() {
                     <Dialog.Panel className="mx-auto max-w-sm rounded-xl bg-white p-6 w-full shadow-2xl">
                         <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-3">
                             <Dialog.Title className="text-lg font-semibold text-slate-800">Generar Factura (CFDI)</Dialog.Title>
-                            <button disabled={isSubmittingInvoice} onClick={() => setIsInvoiceModalOpen(false)}>
+                            <button disabled={isSubmittingInvoice} onClick={() => setIsInvoiceModalOpen(false)} aria-label="Cerrar modal de factura">
                                 <XMarkIcon className="h-5 w-5 text-gray-400 hover:text-gray-600" />
                             </button>
                         </div>

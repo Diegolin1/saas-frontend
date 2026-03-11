@@ -137,9 +137,9 @@ test.describe('Product detail', () => {
 
         await page.goto(`/product/${productId}?companyId=${companyId}`);
 
-        await expect(page.getByRole('heading', { name: productName })).toBeVisible({ timeout: 15_000 });
+        await expect(page.getByTestId('product-title')).toHaveText(productName, { timeout: 15_000 });
         // Size '27' should be visible
-        await expect(page.getByText('27')).toBeVisible();
+        await expect(page.getByText('27', { exact: true }).first()).toBeVisible();
     });
 });
 

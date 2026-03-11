@@ -1,6 +1,6 @@
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
-import { XMarkIcon, ShoppingBagIcon, ReceiptPercentIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, ShoppingBagIcon, ReceiptPercentIcon, DocumentArrowDownIcon } from '@heroicons/react/24/outline';
 import { useEffect, useState } from 'react';
 import { Order, OrderStatusHistoryEntry, getOrderStatusHistory } from '../services/order.service';
 
@@ -83,6 +83,31 @@ export default function OrderDetailDrawer({ order, open, onClose, canReorder = f
                                                         Reordenar
                                                     </button>
                                                 )}
+                                                <button
+                                                    type="button"
+                                                    onClick={async () => {
+                                                        try {
+                                                            const token = localStorage.getItem('token');
+                                                            const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/orders/${order.id}/pdf`, {
+                                                                headers: { Authorization: `Bearer ${token}` },
+                                                            });
+                                                            if (!res.ok) throw new Error('Error');
+                                                            const blob = await res.blob();
+                                                            const url = URL.createObjectURL(blob);
+                                                            const a = document.createElement('a');
+                                                            a.href = url;
+                                                            a.download = `pedido-${order.orderNumber}.pdf`;
+                                                            a.click();
+                                                            URL.revokeObjectURL(url);
+                                                        } catch {
+                                                            alert('No se pudo descargar el PDF.');
+                                                        }
+                                                    }}
+                                                    className={`${canReorder ? '' : 'ml-auto'} rounded-md bg-white/10 px-2.5 py-1 text-xs font-semibold text-white hover:bg-white/20 inline-flex items-center gap-1`}
+                                                >
+                                                    <DocumentArrowDownIcon className="h-3.5 w-3.5" />
+                                                    PDF
+                                                </button>
                                             </div>
                                         </div>
 

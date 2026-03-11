@@ -61,3 +61,8 @@ export const updateLead = async (id: string, data: {
 export const deleteLead = async (id: string): Promise<void> => {
     await api.delete(`/leads/${id}`);
 };
+
+export const convertLeadToCustomer = async (id: string): Promise<any> => {
+    const response = await api.post(`/leads/${id}/convert`);
+    return response.data;
+};

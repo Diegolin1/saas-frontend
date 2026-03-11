@@ -7,6 +7,7 @@ import Layout from './components/Layout'
 import BuyerLayout from './components/BuyerLayout'
 import PublicLayout from './components/PublicLayout'
 import { AuthProvider } from './context/AuthContext'
+import { ThemeProvider } from './context/ThemeContext'
 import ProtectedRoute from './components/ProtectedRoute'
 
 // ── Eagerly-loaded pages (public critical path) ──────────────────
@@ -26,13 +27,18 @@ const PriceLists = lazy(() => import('./pages/PriceLists'))
 const Products = lazy(() => import('./pages/Products'))
 const ProductForm = lazy(() => import('./pages/ProductForm'))
 const Orders = lazy(() => import('./pages/Orders'))
+const OrderForm = lazy(() => import('./pages/OrderForm'))
 const Promotions = lazy(() => import('./pages/Promotions'))
 const Invoices = lazy(() => import('./pages/Invoices'))
+const Reports = lazy(() => import('./pages/Reports'))
 const SettingsLayout = lazy(() => import('./pages/Settings/Layout'))
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'))
+const TermsAndConditions = lazy(() => import('./pages/TermsAndConditions'))
 const BuyerOrders = lazy(() => import('./pages/buyer/BuyerOrders'))
 const BuyerInvoices = lazy(() => import('./pages/buyer/BuyerInvoices'))
 const BuyerCatalog = lazy(() => import('./pages/buyer/BuyerCatalog'))
+const BuyerProfile = lazy(() => import('./pages/buyer/BuyerProfile'))
+const OnboardingWizard = lazy(() => import('./pages/OnboardingWizard'))
 
 // ── Loading fallback ─────────────────────────────────────────────
 function PageLoader() {
@@ -67,81 +73,88 @@ function NotFound() {
 function App() {
     return (
         <AuthProvider>
-            <CartProvider>
-                <ToastProvider>
-                    <BrowserRouter>
-                        <ErrorBoundary>
-                            <Suspense fallback={<PageLoader />}>
-                                <Routes>
-                                    {/* Auth routes */}
-                                    <Route path="/login" element={<Login />} />
-                                    <Route path="/register" element={<Register />} />
-                                    <Route path="/forgot-password" element={<ForgotPassword />} />
-                                    <Route path="/reset-password/:token" element={<ResetPassword />} />
-                                    <Route path="/privacidad" element={<PrivacyPolicy />} />
+            <ThemeProvider>
+                <CartProvider>
+                    <ToastProvider>
+                        <BrowserRouter>
+                            <ErrorBoundary>
+                                <Suspense fallback={<PageLoader />}>
+                                    <Routes>
+                                        {/* Auth routes */}
+                                        <Route path="/login" element={<Login />} />
+                                        <Route path="/register" element={<Register />} />
+                                        <Route path="/forgot-password" element={<ForgotPassword />} />
+                                        <Route path="/reset-password/:token" element={<ResetPassword />} />
+                                        <Route path="/privacidad" element={<PrivacyPolicy />} />
+                                        <Route path="/terminos" element={<TermsAndConditions />} />
 
-                                    {/* PUBLIC ROUTES (Catálogo) */}
-                                    <Route element={<PublicLayout />}>
-                                        <Route path="/" element={<ErrorBoundary><Catalog /></ErrorBoundary>} />
-                                        <Route path="/product/:id" element={<ErrorBoundary><ProductDetail /></ErrorBoundary>} />
-                                        <Route path="/cart" element={<ErrorBoundary><Cart /></ErrorBoundary>} />
-                                    </Route>
-
-                                    {/* PROTECTED ADMIN / BUYER ROUTES */}
-                                    <Route element={<ProtectedRoute allowedRoles={['OWNER', 'ADMIN', 'SUPERVISOR', 'SELLER', 'BUYER']} />}>
-                                        <Route path="/admin" element={<Layout />}>
-
-                                            {/* Dashboard — solo roles de gestión. BUYER → redirigir a my-orders */}
-                                            <Route element={<ProtectedRoute allowedRoles={['OWNER', 'ADMIN', 'SUPERVISOR', 'SELLER']} />}>
-                                                <Route index element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
-                                            </Route>
-
-                                            {/* Admin / Seller Routes */}
-                                            <Route element={<ProtectedRoute allowedRoles={['OWNER', 'ADMIN', 'SUPERVISOR', 'SELLER']} />}>
-                                                <Route path="customers" element={<ErrorBoundary><Customers /></ErrorBoundary>} />
-                                                <Route path="leads" element={<ErrorBoundary><LeadsCRM /></ErrorBoundary>} />
-                                                <Route path="orders" element={<ErrorBoundary><Orders /></ErrorBoundary>} />
-                                            </Route>
-
-                                            <Route element={<ProtectedRoute allowedRoles={['OWNER', 'ADMIN', 'SUPERVISOR']} />}>
-                                                <Route path="price-lists" element={<ErrorBoundary><PriceLists /></ErrorBoundary>} />
-                                                <Route path="products" element={<ErrorBoundary><Products /></ErrorBoundary>} />
-                                                <Route path="products/new" element={<ErrorBoundary><ProductForm /></ErrorBoundary>} />
-                                                <Route path="products/:id/edit" element={<ErrorBoundary><ProductForm /></ErrorBoundary>} />
-                                                <Route path="promotions" element={<ErrorBoundary><Promotions /></ErrorBoundary>} />
-                                                <Route path="invoices" element={<ErrorBoundary><Invoices /></ErrorBoundary>} />
-                                                <Route path="settings" element={<ErrorBoundary><SettingsLayout /></ErrorBoundary>} />
-                                            </Route>
-
-                                            {/* Buyer Portal — rutas exclusivas del comprador */}
-                                            <Route element={<ProtectedRoute allowedRoles={['BUYER']} />}>
-                                                <Route path="my-orders" element={<Navigate to="/buyer/orders" replace />} />
-                                            </Route>
-
+                                        {/* PUBLIC ROUTES (Catálogo) */}
+                                        <Route element={<PublicLayout />}>
+                                            <Route path="/" element={<ErrorBoundary><Catalog /></ErrorBoundary>} />
+                                            <Route path="/product/:id" element={<ErrorBoundary><ProductDetail /></ErrorBoundary>} />
+                                            <Route path="/cart" element={<ErrorBoundary><Cart /></ErrorBoundary>} />
                                         </Route>
-                                    </Route>
 
-                                    {/* BUYER PORTAL */}
-                                    <Route element={<ProtectedRoute allowedRoles={['BUYER']} />}>
-                                        <Route path="/buyer" element={<BuyerLayout />}>
-                                            <Route index element={<Navigate to="orders" replace />} />
-                                            <Route path="orders" element={<ErrorBoundary><BuyerOrders /></ErrorBoundary>} />
-                                            <Route path="invoices" element={<ErrorBoundary><BuyerInvoices /></ErrorBoundary>} />
-                                            <Route path="catalog" element={<ErrorBoundary><BuyerCatalog /></ErrorBoundary>} />
+                                        {/* PROTECTED ADMIN / BUYER ROUTES */}
+                                        <Route element={<ProtectedRoute allowedRoles={['OWNER', 'ADMIN', 'SUPERVISOR', 'SELLER', 'BUYER']} />}>
+                                            <Route path="/admin" element={<Layout />}>
+
+                                                {/* Dashboard — solo roles de gestión. BUYER → redirigir a my-orders */}
+                                                <Route element={<ProtectedRoute allowedRoles={['OWNER', 'ADMIN', 'SUPERVISOR', 'SELLER']} />}>
+                                                    <Route index element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
+                                                </Route>
+
+                                                {/* Admin / Seller Routes */}
+                                                <Route element={<ProtectedRoute allowedRoles={['OWNER', 'ADMIN', 'SUPERVISOR', 'SELLER']} />}>
+                                                    <Route path="customers" element={<ErrorBoundary><Customers /></ErrorBoundary>} />
+                                                    <Route path="leads" element={<ErrorBoundary><LeadsCRM /></ErrorBoundary>} />
+                                                    <Route path="orders/new" element={<ErrorBoundary><OrderForm /></ErrorBoundary>} />
+                                                    <Route path="orders" element={<ErrorBoundary><Orders /></ErrorBoundary>} />
+                                                </Route>
+
+                                                <Route element={<ProtectedRoute allowedRoles={['OWNER', 'ADMIN', 'SUPERVISOR']} />}>
+                                                    <Route path="price-lists" element={<ErrorBoundary><PriceLists /></ErrorBoundary>} />
+                                                    <Route path="products" element={<ErrorBoundary><Products /></ErrorBoundary>} />
+                                                    <Route path="products/new" element={<ErrorBoundary><ProductForm /></ErrorBoundary>} />
+                                                    <Route path="products/:id/edit" element={<ErrorBoundary><ProductForm /></ErrorBoundary>} />
+                                                    <Route path="promotions" element={<ErrorBoundary><Promotions /></ErrorBoundary>} />
+                                                    <Route path="invoices" element={<ErrorBoundary><Invoices /></ErrorBoundary>} />
+                                                    <Route path="reports" element={<ErrorBoundary><Reports /></ErrorBoundary>} />
+                                                    <Route path="settings" element={<ErrorBoundary><SettingsLayout /></ErrorBoundary>} />
+                                                    <Route path="onboarding" element={<ErrorBoundary><OnboardingWizard /></ErrorBoundary>} />
+                                                </Route>
+
+                                                {/* Buyer Portal — rutas exclusivas del comprador */}
+                                                <Route element={<ProtectedRoute allowedRoles={['BUYER']} />}>
+                                                    <Route path="my-orders" element={<Navigate to="/buyer/orders" replace />} />
+                                                </Route>
+
+                                            </Route>
                                         </Route>
-                                    </Route>
 
-                                    {/* Redirect legacy /shop to / */}
-                                    <Route path="/shop" element={<Navigate to="/" replace />} />
+                                        {/* BUYER PORTAL */}
+                                        <Route element={<ProtectedRoute allowedRoles={['BUYER']} />}>
+                                            <Route path="/buyer" element={<BuyerLayout />}>
+                                                <Route index element={<Navigate to="orders" replace />} />
+                                                <Route path="orders" element={<ErrorBoundary><BuyerOrders /></ErrorBoundary>} />
+                                                <Route path="invoices" element={<ErrorBoundary><BuyerInvoices /></ErrorBoundary>} />
+                                                <Route path="catalog" element={<ErrorBoundary><BuyerCatalog /></ErrorBoundary>} />
+                                                <Route path="profile" element={<ErrorBoundary><BuyerProfile /></ErrorBoundary>} />
+                                            </Route>
+                                        </Route>
 
-                                    {/* 404 catch-all */}
-                                    <Route path="*" element={<NotFound />} />
-                                </Routes>
-                            </Suspense>
-                        </ErrorBoundary>
-                    </BrowserRouter>
-                </ToastProvider>
-            </CartProvider>
+                                        {/* Redirect legacy /shop to / */}
+                                        <Route path="/shop" element={<Navigate to="/" replace />} />
+
+                                        {/* 404 catch-all */}
+                                        <Route path="*" element={<NotFound />} />
+                                    </Routes>
+                                </Suspense>
+                            </ErrorBoundary>
+                        </BrowserRouter>
+                    </ToastProvider>
+                </CartProvider>
+            </ThemeProvider>
         </AuthProvider>
     )
 }

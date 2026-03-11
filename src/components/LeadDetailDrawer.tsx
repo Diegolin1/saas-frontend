@@ -1,6 +1,7 @@
 import { Dialog, Transition } from '@headlessui/react';
+import { useState, useEffect } from 'react';
 import { Fragment } from 'react';
-import { XMarkIcon, PhoneIcon, ChatBubbleLeftEllipsisIcon, ShoppingCartIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, PhoneIcon, ChatBubbleLeftEllipsisIcon, ShoppingCartIcon, ClockIcon, UserPlusIcon } from '@heroicons/react/24/outline';
 import { Lead, LeadStatus } from '../services/lead.service';
 
 const STATUS_CONFIG: Record<LeadStatus, { label: string; color: string; bg: string }> = {
@@ -30,10 +31,29 @@ interface Props {
     open: boolean;
     onClose: () => void;
     onWhatsApp?: (lead: Lead) => void;
+    onConvert?: (lead: Lead) => void;
+    onUpdateLead?: (leadId: string, data: Partial<Lead>) => Promise<void>;
 }
 
-export default function LeadDetailDrawer({ lead, open, onClose, onWhatsApp }: Props) {
+export default function LeadDetailDrawer({ lead, open, onClose, onWhatsApp, onConvert, onUpdateLead }: Props) {
     if (!lead) return null;
+
+    const [notes, setNotes] = useState(lead.notes || '');
+    const [savingNotes, setSavingNotes] = useState(false);
+
+    useEffect(() => {
+        setNotes(lead.notes || '');
+    }, [lead]);
+
+    const handleSaveNotes = async () => {
+        if (!onUpdateLead) return;
+        setSavingNotes(true);
+        try {
+            await onUpdateLead(lead.id, { notes });
+        } finally {
+            setSavingNotes(false);
+        }
+    };
 
     const st = STATUS_CONFIG[lead.status];
     const activeCart = lead.carts?.[0];
@@ -92,6 +112,17 @@ export default function LeadDetailDrawer({ lead, open, onClose, onWhatsApp }: Pr
                                                 </button>
                                             )}
 
+                                            {/* Convert to customer */}
+                                            {onConvert && lead.status !== 'CONVERTED' && (
+                                                <button
+                                                    onClick={() => onConvert(lead)}
+                                                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors"
+                                                >
+                                                    <UserPlusIcon className="h-5 w-5" />
+                                                    Convertir a Cliente
+                                                </button>
+                                            )}
+
                                             {/* Assigned seller */}
                                             {lead.assignedTo && (
                                                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
@@ -101,12 +132,18 @@ export default function LeadDetailDrawer({ lead, open, onClose, onWhatsApp }: Pr
                                             )}
 
                                             {/* Notes */}
-                                            {lead.notes && (
-                                                <div>
-                                                    <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">Notas</p>
-                                                    <p className="text-sm text-stone-600 bg-slate-50 rounded-xl p-4 border border-slate-200">{lead.notes}</p>
-                                                </div>
-                                            )}
+                                            <div>
+                                                <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">Seguimiento / Notas</p>
+                                                <textarea
+                                                    value={notes}
+                                                    onChange={(e) => setNotes(e.target.value)}
+                                                    onBlur={handleSaveNotes}
+                                                    rows={4}
+                                                    placeholder="Añade notas sobre la llamada, acuerdos o seguimiento..."
+                                                    className="w-full text-sm text-stone-600 bg-slate-50 rounded-xl p-4 border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-none transition-all"
+                                                />
+                                                {savingNotes && <p className="text-[10px] text-indigo-500 mt-1 animate-pulse">Guardando...</p>}
+                                            </div>
 
                                             {/* Cart info */}
                                             <div>

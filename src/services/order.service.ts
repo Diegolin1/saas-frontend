@@ -69,12 +69,13 @@ export const createOrder = async (orderData: CreateOrderData) => {
     return response.data;
 };
 
-export const getOrders = async (params?: { page?: number; limit?: number; status?: string; search?: string }): Promise<{ orders: Order[]; pagination: PaginationInfo }> => {
+export const getOrders = async (params?: { page?: number; limit?: number; status?: string; search?: string; customerId?: string }): Promise<{ orders: Order[]; pagination: PaginationInfo }> => {
     const searchParams = new URLSearchParams();
     if (params?.page) searchParams.set('page', String(params.page));
     if (params?.limit) searchParams.set('limit', String(params.limit));
     if (params?.status) searchParams.set('status', params.status);
     if (params?.search) searchParams.set('search', params.search);
+    if (params?.customerId) searchParams.set('customerId', params.customerId);
     const qs = searchParams.toString();
     const response = await api.get(`/orders${qs ? '?' + qs : ''}`);
     return response.data;

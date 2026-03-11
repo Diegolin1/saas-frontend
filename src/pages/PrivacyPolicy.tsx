@@ -1,7 +1,14 @@
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
+
+interface CompanyInfo {
+    name: string;
+    logoUrl: string | null;
+    whatsappPhone: string | null;
+}
 
 const PrivacyPolicy = () => {
-    const companyName = import.meta.env.VITE_COMPANY_NAME || 'ShowRoom B2B';
+    const { companyInfo } = useOutletContext<{ companyInfo: CompanyInfo | null }>();
+    const companyName = companyInfo?.name || import.meta.env.VITE_COMPANY_NAME || 'ShowRoom B2B';
     const contactEmail = import.meta.env.VITE_CONTACT_EMAIL || 'privacidad@showroomapp.mx';
 
     return (

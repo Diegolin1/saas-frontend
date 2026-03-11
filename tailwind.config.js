@@ -35,8 +35,8 @@ export default {
                     200: '#c7cede',
                     300: '#00D1FF', // Cyan accent
                     400: '#677db0',
-                    500: '#0052FF', // Deep Blue Primary
-                    600: '#34467c',
+                    500: 'rgb(var(--color-brand-500, 0 82 255) / <alpha-value>)', // Deep Blue Primary (dynamic)
+                    600: 'rgb(var(--color-brand-600, 0 68 212) / <alpha-value>)', // Adjusted darker shade
                     700: '#2c3a64',
                     800: '#253153',
                     900: '#0B0F19', // Midnight Background

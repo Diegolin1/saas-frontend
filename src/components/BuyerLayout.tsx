@@ -9,6 +9,7 @@ const NAV_ITEMS = [
     { label: 'Mis Pedidos', href: '/buyer/orders' },
     { label: 'Mis Facturas', href: '/buyer/invoices' },
     { label: 'Catálogo', href: '/buyer/catalog' },
+    { label: 'Mi Perfil', href: '/buyer/profile' },
 ];
 
 export default function BuyerLayout() {

@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { CurrencyDollarIcon, ShoppingCartIcon, UsersIcon, SparklesIcon, QrCodeIcon, ArrowTopRightOnSquareIcon, RocketLaunchIcon, ChartBarIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
 import { getDashboardStats, getTopProducts, getLowStockProducts, getSalesByDay } from '../services/dashboard.service'
 import { SkeletonCard, SkeletonChart } from '../components/Skeleton'
-import { Link, useOutletContext } from 'react-router-dom'
+import { Link, useOutletContext, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Tooltip } from '../components/Tooltip'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts'
@@ -49,6 +49,7 @@ export default function Dashboard() {
     const { companyName } = (useOutletContext<{ companyName: string; companyLogoUrl: string | null }>()) ?? {}
     const ONBOARDING_LINK_SHARED_KEY = 'onboarding_link_shared_v1'
     const [linkShared, setLinkShared] = useState<boolean>(() => localStorage.getItem(ONBOARDING_LINK_SHARED_KEY) === '1')
+    const navigate = useNavigate();
 
     const fetchData = useCallback(async () => {
         setLoading(true)
@@ -73,6 +74,13 @@ export default function Dashboard() {
     useEffect(() => {
         fetchData()
     }, [fetchData])
+
+    useEffect(() => {
+        // Redirigir a onboarding si la cuenta es nueva y no tiene productos configurados
+        if (!loading && user?.role === 'OWNER' && stats && topProducts.length === 0 && lowStock.length === 0 && stats.salesToday === 0 && stats.salesMonth === 0) {
+            navigate('/admin/onboarding');
+        }
+    }, [loading, user?.role, stats, topProducts, lowStock, navigate]);
 
     if (loading) return (
         <div className="max-w-7xl mx-auto space-y-8 animate-fade-in">

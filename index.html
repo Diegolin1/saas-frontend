@@ -1,26 +1,39 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/assets/logo-dark.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ShowRoom B2B — Catálogo Mayorista Digital</title>
-    <meta name="description" content="Plataforma B2B para distribuidores y compradores mayoristas. Catálogo digital, pedidos en línea y gestión de precios." />
-    <meta name="theme-color" content="#1c1917" />
 
-    <!-- Open Graph / Social -->
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="ShowRoom B2B — Catálogo Mayorista Digital" />
-    <meta property="og:description" content="Plataforma B2B para distribuidores y compradores mayoristas. Catálogo digital, pedidos en línea y gestión de precios." />
-    <meta property="og:locale" content="es_MX" />
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="/assets/logo-dark.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ShowRoom B2B — Catálogo Mayorista Digital</title>
+  <meta name="description"
+    content="Plataforma B2B para distribuidores y compradores mayoristas. Catálogo digital, pedidos en línea y gestión de precios." />
+  <meta name="theme-color" content="#1c1917" />
 
-    <!-- Fonts preconnect -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+  <!-- Open Graph / Social -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="ShowRoom B2B — Catálogo Mayorista Digital" />
+  <meta property="og:description"
+    content="Plataforma B2B para distribuidores y compradores mayoristas. Catálogo digital, pedidos en línea y gestión de precios." />
+  <meta property="og:locale" content="es_MX" />
+
+  <!-- Fonts preconnect and preload -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" as="style"
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" />
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+    media="print" onload="this.media='all'" />
+  <noscript>
+    <link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" />
+  </noscript>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>

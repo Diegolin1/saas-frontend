@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SkeletonPage } from '../components/Skeleton';
-import { getLeads, updateLead, Lead, LeadStatus, PaginationInfo } from '../services/lead.service';
+import { getLeads, updateLead, Lead, LeadStatus, PaginationInfo, convertLeadToCustomer } from '../services/lead.service';
 import { getUsers, User } from '../services/user.service';
 import { ShoppingCartIcon, ChatBubbleLeftEllipsisIcon, PhoneIcon, FunnelIcon, MagnifyingGlassIcon, UserCircleIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import { exportToCSV } from '../utils/export';
@@ -88,12 +88,12 @@ export default function LeadsCRM() {
 
     const handleConvertToCustomer = async (lead: Lead) => {
         try {
-            await updateLead(lead.id, { status: 'CONVERTED' });
+            const result = await convertLeadToCustomer(lead.id);
             setLeads(prev => prev.map(l => l.id === lead.id ? { ...l, status: 'CONVERTED' as LeadStatus } : l));
-            showToast('Lead marcado como Convertido. Completa el registro del cliente.', 'success');
-            navigate(`/admin/customers?convert=${encodeURIComponent(lead.name || '')}&phone=${encodeURIComponent(lead.phone)}`);
-        } catch {
-            showToast('Error al convertir el lead.', 'error');
+            showToast('Lead convertido exitosamente. Se ha registrado como cliente.', 'success');
+            navigate(`/admin/customers?id=${result.customer.id}`);
+        } catch (err: any) {
+            showToast(err.response?.data?.error || 'Error al convertir el lead.', 'error');
         }
     };
 
@@ -270,7 +270,10 @@ export default function LeadsCRM() {
                                                         {lead.status !== 'CONVERTED' && (
                                                             <Tooltip content="Convertir a cliente registrado">
                                                                 <button
-                                                                    onClick={() => handleConvertToCustomer(lead)}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleConvertToCustomer(lead);
+                                                                    }}
                                                                     className="inline-flex items-center gap-1 rounded-lg px-2.5 py-2 text-xs font-semibold bg-brand-50 text-brand-600 hover:bg-brand-100 transition-all">
                                                                     <UserCircleIcon className="h-4 w-4" />
                                                                     Convertir
@@ -302,6 +305,8 @@ export default function LeadsCRM() {
                 open={!!selectedLead}
                 onClose={() => setSelectedLead(null)}
                 onWhatsApp={handleWhatsAppRecovery}
+                onConvert={handleConvertToCustomer}
+                onUpdateLead={async (id, data) => { await updateLead(id, data); loadData(); }}
             />
         </div>
     );

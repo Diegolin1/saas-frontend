@@ -26,6 +26,7 @@ export default function CompanySettingsPage() {
     const [currency, setCurrency] = useState('MXN');
     const [categoriesText, setCategoriesText] = useState('');
     const [logoUrl, setLogoUrl] = useState('');
+    const [brandColor, setBrandColor] = useState('#1c1917');
     const [uploadingLogo, setUploadingLogo] = useState(false);
     const logoInputRef = useRef<HTMLInputElement>(null);
     const [slugName, setSlugName] = useState('');
@@ -55,6 +56,7 @@ export default function CompanySettingsPage() {
             setCurrency(s.currency || 'MXN');
             setCategoriesText((s.categories || []).join(', '));
             setLogoUrl(s.logoUrl || '');
+            setBrandColor(s.brandColor || '#1c1917');
             setSlugName(data.slugName || '');
 
             const addr = data.address || {};
@@ -112,6 +114,7 @@ export default function CompanySettingsPage() {
                     state,
                     currency,
                     categories,
+                    brandColor,
                 },
             });
 
@@ -177,6 +180,23 @@ export default function CompanySettingsPage() {
                             <p className="text-xs text-gray-400">JPG, PNG o WEBP · Máx. 5 MB</p>
                         </div>
                     </div>
+
+                    {/* Brand Color Setup */}
+                    <div className="mt-6 border-t border-gray-100 pt-6">
+                        <label className="block text-sm font-medium text-gray-700">Color de Marca (Whitelabel)</label>
+                        <div className="mt-2 flex items-center gap-4">
+                            <input
+                                type="color"
+                                value={brandColor}
+                                onChange={e => setBrandColor(e.target.value)}
+                                className="h-10 w-20 cursor-pointer rounded-md border border-gray-300 p-1 bg-white shadow-sm"
+                            />
+                            <div className="text-xs text-gray-500">
+                                Personaliza el color principal de la barra superior, botones y etiquetas del catálogo público en línea.
+                            </div>
+                        </div>
+                    </div>
+
                     <input
                         ref={logoInputRef}
                         type="file"

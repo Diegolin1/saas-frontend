@@ -151,16 +151,16 @@ export default function ProductDetail() {
                     className="fixed inset-0 z-50 bg-black flex items-center justify-center"
                     onClick={() => setShowZoom(false)}
                 >
-                    <button className="absolute top-5 right-5 z-10 text-white/60 hover:text-white p-3" onClick={() => setShowZoom(false)}>
+                    <button aria-label="Cerrar modal" className="absolute top-5 right-5 z-10 text-white/60 hover:text-white p-3" onClick={() => setShowZoom(false)}>
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                     {product.images.length > 1 && (
                         <>
-                            <button onClick={(e) => { e.stopPropagation(); setSelectedImageIndex(i => (i - 1 + product.images.length) % product.images.length) }}
+                            <button aria-label="Imagen anterior" onClick={(e) => { e.stopPropagation(); setSelectedImageIndex(i => (i - 1 + product.images.length) % product.images.length) }}
                                 className="absolute left-4 top-1/2 -translate-y-1/2 p-3 text-white/50 hover:text-white z-10">
                                 <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" /></svg>
                             </button>
-                            <button onClick={(e) => { e.stopPropagation(); setSelectedImageIndex(i => (i + 1) % product.images.length) }}
+                            <button aria-label="Imagen siguiente" onClick={(e) => { e.stopPropagation(); setSelectedImageIndex(i => (i + 1) % product.images.length) }}
                                 className="absolute right-4 top-1/2 -translate-y-1/2 p-3 text-white/50 hover:text-white z-10">
                                 <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" /></svg>
                             </button>
@@ -169,6 +169,8 @@ export default function ProductDetail() {
                     <img
                         src={product.images[selectedImageIndex].url}
                         alt={product.name}
+                        loading="lazy"
+                        decoding="async"
                         className="max-h-[92vh] max-w-[96vw] object-contain"
                         onClick={(e) => e.stopPropagation()}
                     />
@@ -212,6 +214,8 @@ export default function ProductDetail() {
                                 key={selectedImageIndex}
                                 src={product.images[selectedImageIndex].url}
                                 alt={`${product.name} – ${selectedImageIndex + 1}`}
+                                loading="eager"
+                                decoding="sync"
                                 className="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-300"
                             />
                         ) : (
@@ -222,12 +226,14 @@ export default function ProductDetail() {
                         {product.images?.length > 1 && (
                             <>
                                 <button
+                                    aria-label="Imagen anterior"
                                     onClick={(e) => { e.stopPropagation(); setSelectedImageIndex(i => (i - 1 + product.images.length) % product.images.length) }}
                                     className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center bg-white/80 hover:bg-white transition-colors shadow-sm"
                                 >
                                     <svg className="w-4 h-4 text-stone-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                                 </button>
                                 <button
+                                    aria-label="Imagen siguiente"
                                     onClick={(e) => { e.stopPropagation(); setSelectedImageIndex(i => (i + 1) % product.images.length) }}
                                     className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center bg-white/80 hover:bg-white transition-colors shadow-sm"
                                 >
@@ -249,7 +255,7 @@ export default function ProductDetail() {
                                     onClick={() => setSelectedImageIndex(idx)}
                                     className={`flex-shrink-0 w-16 h-20 overflow-hidden transition-all duration-200 ${idx === selectedImageIndex ? 'ring-2 ring-stone-900 ring-offset-1' : 'opacity-50 hover:opacity-80'}`}
                                 >
-                                    <img src={img.url} alt="" className="w-full h-full object-cover" />
+                                    <img src={img.url} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                                 </button>
                             ))}
                         </div>
@@ -264,7 +270,7 @@ export default function ProductDetail() {
                         {product.category && (
                             <p className="text-[10px] tracking-[0.25em] uppercase text-stone-400 font-semibold">{product.category}</p>
                         )}
-                        <h1 className="text-xl sm:text-2xl font-semibold text-stone-900 leading-snug">{product.name}</h1>
+                        <h1 data-testid="product-title" className="text-xl sm:text-2xl font-semibold text-stone-900 leading-snug">{product.name}</h1>
                         <p className="text-xs text-stone-400 tracking-widest uppercase">SKU: {product.sku || 'N/A'}</p>
 
                         {/* Price */}

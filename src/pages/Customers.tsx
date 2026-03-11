@@ -9,7 +9,10 @@ import { PlusIcon, PencilSquareIcon, TrashIcon, XMarkIcon, UserIcon, Exclamation
 import Pagination from '../components/Pagination';
 import { useToast } from '../context/ToastContext';
 import { getErrorMessage } from '../services/api';
+import api from '../services/api';
 import { formatMXN } from '../utils/format';
+import { ArrowDownTrayIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import CustomerDetailDrawer from '../components/CustomerDetailDrawer';
 
 const MEXICAN_STATES = [
     'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas',
@@ -50,6 +53,7 @@ export default function Customers() {
     const [search, setSearch] = useState('');
     const [searchDebounce, setSearchDebounce] = useState('');
     const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+    const [selectedCustomerForDetail, setSelectedCustomerForDetail] = useState<Customer | null>(null);
 
     const [formData, setFormData] = useState<Partial<Customer>>({
         businessName: '',
@@ -222,7 +226,30 @@ export default function Customers() {
                         Lista de clientes registrados, sus listas de precios y límites de crédito.
                     </p>
                 </div>
-                <div className="mt-4 sm:mt-0">
+                <div className="mt-4 sm:mt-0 flex items-center gap-3">
+                    {customers.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={async () => {
+                                try {
+                                    const response = await api.get('/customers/export/csv', { responseType: 'blob' });
+                                    const url = window.URL.createObjectURL(new Blob([response.data]));
+                                    const link = document.createElement('a');
+                                    link.href = url;
+                                    link.setAttribute('download', 'clientes.csv');
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    link.remove();
+                                } catch (error) {
+                                    showToast('Error al exportar clientes', 'error');
+                                }
+                            }}
+                            className="flex items-center gap-2 bg-white text-slate-700 px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold shadow-sm hover:bg-slate-50 transition-all"
+                        >
+                            <ArrowDownTrayIcon className="h-4 w-4" />
+                            Exportar CSV
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={() => openModal()}
@@ -276,9 +303,12 @@ export default function Customers() {
                                         </tr>
                                     ) : customers.map((customer) => (
                                         <tr key={customer.id}>
-                                            <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                                            <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6 cursor-pointer hover:text-brand-600 transition-colors" onClick={() => setSelectedCustomerForDetail(customer)}>
                                                 {customer.businessName}
-                                                <div className="text-gray-500 font-normal text-xs">{customer.code}</div>
+                                                <div className="text-gray-500 font-normal text-xs flex items-center gap-1">
+                                                    {customer.code}
+                                                    <ChevronRightIcon className="h-2 w-2" />
+                                                </div>
                                             </td>
                                             <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{customer.taxId || '-'}</td>
                                             <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
@@ -544,6 +574,12 @@ export default function Customers() {
                     </Dialog.Panel>
                 </div>
             </Dialog>
+
+            <CustomerDetailDrawer
+                customer={selectedCustomerForDetail}
+                open={!!selectedCustomerForDetail}
+                onClose={() => setSelectedCustomerForDetail(null)}
+            />
         </div>
     );
 }

@@ -10,7 +10,16 @@ interface CompanyInfo {
     name: string;
     logoUrl: string | null;
     whatsappPhone: string | null;
+    brandColor: string | null;
 }
+
+// Helper function to convert HEX to RGB for Tailwind opacity support
+const hexToRgb = (hex: string) => {
+    const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+    hex = hex.replace(shorthandRegex, (_, r, g, b) => r + r + g + g + b + b);
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? `${parseInt(result[1], 16)} ${parseInt(result[2], 16)} ${parseInt(result[3], 16)}` : '0 82 255';
+};
 
 export default function PublicLayout() {
     const { itemCount } = useCart();
@@ -34,10 +43,10 @@ export default function PublicLayout() {
                 .then(data => {
                     if (data) {
                         setResolvedCompanyId(data.id || '');
-                        setCompanyInfo({ name: data.name, logoUrl: data.logoUrl, whatsappPhone: data.whatsappPhone });
+                        setCompanyInfo({ name: data.name, logoUrl: data.logoUrl, whatsappPhone: data.whatsappPhone, brandColor: data.brandColor });
                     }
                 })
-                .catch(() => {});
+                .catch(() => { });
             return;
         }
 
@@ -46,8 +55,8 @@ export default function PublicLayout() {
         if (!fallbackId) return;
         fetch(`${API_URL}/settings/public/${fallbackId}`)
             .then(r => r.ok ? r.json() : null)
-            .then(data => { if (data) setCompanyInfo({ name: data.name, logoUrl: data.logoUrl, whatsappPhone: data.whatsappPhone }); })
-            .catch(() => {});
+            .then(data => { if (data) setCompanyInfo({ name: data.name, logoUrl: data.logoUrl, whatsappPhone: data.whatsappPhone, brandColor: data.brandColor }); })
+            .catch(() => { });
     }, [companySlug, companyIdParam]);
 
     // Cargar categorías reales del catálogo para el nav del header
@@ -63,6 +72,16 @@ export default function PublicLayout() {
         };
         load();
     }, [resolvedCompanyId]);
+
+    // Apply Dynamic Brand Color to CSS variables when CompanyInfo changes
+    useEffect(() => {
+        if (companyInfo?.brandColor) {
+            const rgb = hexToRgb(companyInfo.brandColor);
+            document.documentElement.style.setProperty('--color-brand-500', rgb);
+        } else {
+            document.documentElement.style.removeProperty('--color-brand-500');
+        }
+    }, [companyInfo?.brandColor]);
 
     // Cerrar menú móvil al cambiar de ruta
     useEffect(() => { setMobileMenuOpen(false); }, [searchParams]);
@@ -85,7 +104,10 @@ export default function PublicLayout() {
     return (
         <div className="min-h-screen font-sans bg-white text-stone-900 flex flex-col">
             {/* ── Top Promo Bar ──────────────────────────────────────── */}
-            <div className="bg-stone-900 text-white text-[10px] sm:text-xs font-medium text-center py-2 px-4 tracking-wide">
+            <div
+                className="text-white text-[10px] sm:text-xs font-medium text-center py-2 px-4 tracking-wide"
+                style={{ backgroundColor: companyInfo?.brandColor || '#1c1917' }}
+            >
                 Envío gratis a todo México en compras mayores a $1,500 MXN
             </div>
 
@@ -127,9 +149,10 @@ export default function PublicLayout() {
                                         key={cat}
                                         onClick={() => goToCategory(cat)}
                                         className={`text-sm font-medium transition-colors whitespace-nowrap ${activeCategory.toLowerCase() === cat.toLowerCase()
-                                                ? 'text-stone-900 font-bold border-b-2 border-stone-900 pb-0.5'
-                                                : 'text-stone-600 hover:text-stone-900'
+                                            ? 'font-bold border-b-2 pb-0.5'
+                                            : 'text-stone-600 hover:text-stone-900'
                                             }`}
+                                        style={activeCategory.toLowerCase() === cat.toLowerCase() ? { color: companyInfo?.brandColor || '#1c1917', borderColor: companyInfo?.brandColor || '#1c1917' } : {}}
                                     >
                                         {cat}
                                     </button>
@@ -170,7 +193,10 @@ export default function PublicLayout() {
                             <Link to={companySlug ? `/cart?slug=${encodeURIComponent(companySlug)}` : (resolvedCompanyId ? `/cart?companyId=${resolvedCompanyId}` : '/cart')} className="relative group p-1" title="Mi Carrito">
                                 <ShoppingBagIcon className="h-5 w-5 sm:h-6 sm:w-6 text-stone-700 group-hover:text-stone-900 transition-colors" />
                                 {itemCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center text-[9px] font-bold text-white bg-stone-900 rounded-full">
+                                    <span
+                                        className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center text-[9px] font-bold text-white rounded-full"
+                                        style={{ backgroundColor: companyInfo?.brandColor || '#1c1917' }}
+                                    >
                                         {itemCount}
                                     </span>
                                 )}
@@ -207,8 +233,8 @@ export default function PublicLayout() {
                                 key={cat}
                                 onClick={() => goToCategory(cat)}
                                 className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeCategory.toLowerCase() === cat.toLowerCase()
-                                        ? 'bg-stone-900 text-white'
-                                        : 'text-stone-700 hover:bg-stone-50'
+                                    ? 'bg-stone-900 text-white'
+                                    : 'text-stone-700 hover:bg-stone-50'
                                     }`}
                             >
                                 {cat}
@@ -243,6 +269,7 @@ export default function PublicLayout() {
                                 <Link to={buildUrl({})} className="text-xs text-stone-500 hover:text-stone-900 transition-colors">Catálogo</Link>
                                 <Link to={companySlug ? `/cart?slug=${encodeURIComponent(companySlug)}` : (resolvedCompanyId ? `/cart?companyId=${resolvedCompanyId}` : '/cart')} className="text-xs text-stone-500 hover:text-stone-900 transition-colors">Mi Pedido</Link>
                                 <Link to="/privacidad" className="text-xs text-stone-500 hover:text-stone-900 transition-colors">Aviso de Privacidad</Link>
+                                <Link to="/terminos" className="text-xs text-stone-500 hover:text-stone-900 transition-colors">Términos y Condiciones</Link>
                             </div>
                         </div>
                         <div className="space-y-3">

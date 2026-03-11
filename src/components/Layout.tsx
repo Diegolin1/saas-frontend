@@ -17,11 +17,13 @@ import {
     ChevronDoubleLeftIcon,
     BellIcon,
     ChevronRightIcon,
-    ArrowRightStartOnRectangleIcon
+    ArrowRightStartOnRectangleIcon,
+    ChartBarSquareIcon
 } from '@heroicons/react/24/outline'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
+import { useTheme } from '../context/ThemeContext'
 import api from '../services/api'
 
 function cn(...classes: string[]) {
@@ -39,6 +41,7 @@ const ROUTE_LABELS: Record<string, string> = {
     '/admin/price-lists': 'Listas de Precio',
     '/admin/promotions': 'Promociones',
     '/admin/invoices': 'Facturación',
+    '/admin/reports': 'Reportes',
     '/admin/settings': 'Configuración',
     '/admin/my-orders': 'Mis Pedidos',
 }
@@ -54,16 +57,7 @@ export default function Layout() {
     const [pendingCount, setPendingCount] = useState(0)
     const [avatarOpen, setAvatarOpen] = useState(false)
     const avatarRef = useRef<HTMLDivElement>(null)
-    const [companyName, setCompanyName] = useState<string>('')
-    const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null)
-
-    // Fetch company settings once for logo + name
-    useEffect(() => {
-        api.get('/settings').then(res => {
-            if (res.data?.name) setCompanyName(res.data.name)
-            if (res.data?.settings?.logoUrl) setCompanyLogoUrl(res.data.settings.logoUrl)
-        }).catch(() => {})
-    }, [user?.companyId])
+    const { companyName, logoUrl: companyLogoUrl } = useTheme()
 
     // Fetch pending orders count for notification bell (solo roles de gestión)
     useEffect(() => {
@@ -139,6 +133,7 @@ export default function Layout() {
             { name: 'Listas de Precio', href: '/admin/price-lists', icon: CurrencyDollarIcon },
             { name: 'Promociones', href: '/admin/promotions', icon: GiftIcon },
             { name: 'Facturación', href: '/admin/invoices', icon: DocumentTextIcon },
+            { name: 'Reportes', href: '/admin/reports', icon: ChartBarSquareIcon },
         ];
         const ownerNav = [
             ...adminNav,

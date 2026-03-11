@@ -47,13 +47,16 @@ export const Toast: FC<ToastProps> = ({ message, type = 'info', onClose, duratio
     };
 
     return (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] max-w-md w-[calc(100%-2rem)] animate-in slide-in-from-top-2 fade-in duration-300">
-            <div className={`flex items-center gap-3 px-5 py-3.5 shadow-lg ${styles[type]}`}>
-                {icons[type]}
-                <span className="text-xs tracking-wide font-medium flex-1">{message}</span>
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] max-w-md w-[calc(100%-2rem)] animate-in slide-in-from-top-2 fade-in duration-300" role="alert" aria-live="assertive">
+            <div className={`flex items-start gap-3 px-5 py-3.5 shadow-xl rounded-lg ${styles[type]}`}>
+                <div className="mt-0.5">{icons[type]}</div>
+                <span className="text-[13px] font-medium leading-tight flex-1" aria-atomic="true">
+                    {message}
+                </span>
                 <button
                     onClick={onClose}
-                    className="opacity-60 hover:opacity-100 transition-opacity flex-shrink-0 ml-2"
+                    className="opacity-70 hover:opacity-100 transition-opacity flex-shrink-0 ml-2 mt-0.5 focus:outline-none focus:ring-2 focus:ring-white rounded"
+                    aria-label="Cerrar notificación"
                 >
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

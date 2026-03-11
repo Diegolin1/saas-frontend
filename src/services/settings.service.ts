@@ -21,6 +21,7 @@ export interface CompanySettings {
         city?: string;
         state?: string;
         currency?: string;
+        brandColor?: string;
     } | null;
 }
 
@@ -33,6 +34,7 @@ export interface PublicCompanyInfo {
     state: string | null;
     currency: string;
     categories: string[];
+    brandColor: string | null;
 }
 
 export const getSettings = async (): Promise<CompanySettings> => {
