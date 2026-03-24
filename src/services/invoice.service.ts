@@ -72,7 +72,7 @@ export const getInvoices = async (params?: GetInvoicesParams): Promise<{ invoice
     }
 };
 
-export const downloadInvoicePdf = async (invoiceId: string, uuid?: string): Promise<void> => {
+export const downloadInvoicePdf = async (invoiceId: string, _uuid?: string): Promise<void> => {
     try {
         const response = await api.get(`/invoices/${invoiceId}/pdf`);
         if (response.data && response.data.url) {
@@ -85,7 +85,7 @@ export const downloadInvoicePdf = async (invoiceId: string, uuid?: string): Prom
     }
 };
 
-export const downloadInvoiceXml = async (invoiceId: string, uuid?: string): Promise<void> => {
+export const downloadInvoiceXml = async (invoiceId: string, _uuid?: string): Promise<void> => {
     try {
         const response = await api.get(`/invoices/${invoiceId}/xml`);
         if (response.data && response.data.url) {

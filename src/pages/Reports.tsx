@@ -14,7 +14,7 @@ export default function Reports() {
     const [categoryData, setCategoryData] = useState<CategoryRow[]>([]);
     const [customerData, setCustomerData] = useState<CustomerRow[]>([]);
     const [loading, setLoading] = useState(true);
-    const [period, setPeriod] = useState(30); // days
+    const [period] = useState(30); // days
 
     useEffect(() => {
         setLoading(true);
@@ -65,7 +65,7 @@ export default function Reports() {
                             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                             <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#94a3b8' }} />
                             <YAxis tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 11, fill: '#94a3b8' }} />
-                            <Tooltip formatter={(v: number) => [formatMXN(v), 'Ventas']} labelFormatter={(l) => `Fecha: ${l}`} />
+                            <Tooltip formatter={(v: any) => [formatMXN(Number(v)), 'Ventas']} labelFormatter={(l) => `Fecha: ${l}`} />
                             <Bar dataKey="total" fill="#6366f1" radius={[4, 4, 0, 0]} />
                         </BarChart>
                     </ResponsiveContainer>
@@ -85,7 +85,7 @@ export default function Reports() {
                                     <Pie data={categoryData} dataKey="total" nameKey="category" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }: any) => `${name} (${(percent * 100).toFixed(0)}%)`}>
                                         {categoryData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                                     </Pie>
-                                    <Tooltip formatter={(v: number) => formatMXN(v)} />
+                                    <Tooltip formatter={(v: any) => formatMXN(Number(v))} />
                                     <Legend />
                                 </PieChart>
                             </ResponsiveContainer>

@@ -49,9 +49,11 @@ Ve a tu servicio → **Environment** → añade estas:
 4. Copia el `Signing secret` y ponlo en `STRIPE_WEBHOOK_SECRET`.
 
 ### Migrar la base de datos
-Después del primer deploy, ejecuta en la consola de Render (Shell):
+Para producción, se utiliza `npm run db:deploy` el cual ejecuta `prisma migrate deploy`.
+Esto ya está configurado en el `render.yaml` dentro del campo `preDeployCommand`, por lo que las migraciones se aplicarán solas en cada despliegue exitoso antes de poner en línea el nuevo código.
+Si llegaras a necesitar aplicarlas manualmente desde la Shell de Render:
 ```bash
-npx prisma db push
+npx prisma migrate deploy
 ```
 
 ---
@@ -94,7 +96,7 @@ npx wrangler pages deploy dist --project-name saas-frontend
 - [ ] `STRIPE_SECRET_KEY` es la llave **Live** (no test)
 - [ ] `FACTURAPI_KEY` es la llave **Live** (no test)
 - [ ] Webhook de Stripe apunta a la URL de producción
-- [ ] `npx prisma db push` ejecutado tras el deploy
+- [ ] Las migraciones se aplicarán automáticamente (o ejecuta `npx prisma migrate deploy` en la Shell de Render si no usaste `render.yaml`)
 - [ ] Health check responde: `GET /health` → `{ "status": "ok" }`
 - [ ] CORS: la URL de Cloudflare Pages está en el array `allowedOrigins` de `app.ts`
 

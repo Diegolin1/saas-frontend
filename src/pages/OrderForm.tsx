@@ -39,7 +39,6 @@ export default function OrderForm() {
     const [selectedCustomer, setSelectedCustomer] = useState<string>('');
     const [customerPriceListId, setCustomerPriceListId] = useState<string | null>(null);
     
-    const [products, setProducts] = useState<Product[]>([]);
     const [orderItems, setOrderItems] = useState<OrderItemEntry[]>([]);
     
     const [searchTerm, setSearchTerm] = useState('');
@@ -67,10 +66,6 @@ export default function OrderForm() {
         }).catch(() => {});
     }, [searchParams]);
 
-    // Fetch products (initial)
-    useEffect(() => {
-        api.get('/products?limit=10').then(res => setProducts(res.data.products || [])).catch(() => {});
-    }, []);
 
     const handleCustomerChange = (customerId: string) => {
         setSelectedCustomer(customerId);
