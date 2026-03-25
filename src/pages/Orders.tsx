@@ -40,8 +40,7 @@ const OrderRow = memo(({
     handleInvoiceClick,
     handleDownload,
     handleCheckout,
-    handleReorder,
-    showToast
+    handleReorder
 }: {
     order: any,
     canChangeStatus: boolean,
@@ -51,16 +50,20 @@ const OrderRow = memo(({
     handleInvoiceClick: (id: string) => void,
     handleDownload: (id: string, type: 'pdf' | 'xml', uuid?: string) => void,
     handleCheckout: (id: string) => void,
-    handleReorder: (o: any) => void,
-    showToast: (msg: string, type: any) => void
+    handleReorder: (o: any) => void
 }) => (
-    <tr className="hover:bg-slate-50/50 transition-colors">
-        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-slate-900 sm:pl-6 cursor-pointer hover:text-brand-600 transition-colors" onClick={() => setSelectedOrder(order)}>
+    <tr className="hover:bg-slate-50/50 transition-colors group">
+        {/* Order # */}
+        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-semibold text-brand-600 sm:pl-6 cursor-pointer hover:text-brand-700 transition-colors" onClick={() => setSelectedOrder(order)}>
             #{order.orderNumber}
         </td>
-        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{order.customerName}</td>
-        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{order.date}</td>
-        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+        {/* Customer + Date */}
+        <td className="whitespace-nowrap px-3 py-4 text-sm">
+            <div className="font-medium text-slate-900 truncate max-w-[160px]">{order.customerName}</div>
+            <div className="text-xs text-slate-400 mt-0.5">{order.date}</div>
+        </td>
+        {/* Status */}
+        <td className="whitespace-nowrap px-3 py-4 text-sm">
             {canChangeStatus ? (
                 <div className="relative inline-block">
                     <select
@@ -81,74 +84,51 @@ const OrderRow = memo(({
                 </span>
             )}
         </td>
-        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
-            {formatMXN(order.subtotal)}
-        </td>
-        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-            {formatMXN(order.taxAmount || 0)}
-        </td>
-        <td className="whitespace-nowrap px-3 py-4 text-sm font-bold text-gray-900">
-            {formatMXN(order.total)}
-        </td>
-        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-            {order.discountAmount > 0 ? (
-                <span className="inline-flex items-center gap-1">
-                    <span className="inline-flex rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
-                        {order.promotionCode}
-                    </span>
-                    <span className="text-green-600 font-medium">
-                        -{formatMXN(order.discountAmount)}
-                    </span>
-                </span>
-            ) : (
-                <span className="text-gray-400">—</span>
+        {/* Total + Discount */}
+        <td className="whitespace-nowrap px-3 py-4 text-sm">
+            <div className="font-bold text-slate-900">{formatMXN(order.total)}</div>
+            {order.discountAmount > 0 && (
+                <div className="text-xs text-green-600 font-medium mt-0.5">
+                    -{formatMXN(order.discountAmount)} · {order.promotionCode}
+                </div>
             )}
         </td>
-        <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-            {order.invoiced && order.invoiceData ? (
-                <div className="flex flex-col items-end gap-1">
-                    <span className="text-green-600 flex items-center justify-end gap-1 text-xs font-semibold">
-                        <DocumentTextIcon className="h-4 w-4" />
-                        Facturado
-                    </span>
-                    <div className="flex gap-2 text-xs">
-                        <button onClick={() => handleDownload(order.invoiceData!.id, 'pdf', order.invoiceData!.uuid)} className="text-indigo-600 hover:text-indigo-900 border border-indigo-200 rounded px-2 py-0.5 bg-indigo-50">PDF</button>
-                        <button onClick={() => handleDownload(order.invoiceData!.id, 'xml', order.invoiceData!.uuid)} className="text-blue-600 hover:text-blue-900 border border-blue-200 rounded px-2 py-0.5 bg-blue-50">XML</button>
-                    </div>
-                    {!canChangeStatus && order.status === 'PENDING' && (
-                        <button onClick={() => handleCheckout(order.id)} className="w-full text-center bg-slate-900 text-white rounded px-2 py-1 mt-1 text-[10px] font-bold hover:bg-slate-800 transition-colors">
-                            Pagar en Línea
-                        </button>
-                    )}
-                </div>
-            ) : canChangeStatus ? (
+        {/* Actions */}
+        <td className="relative whitespace-nowrap py-4 pl-3 pr-4 sm:pr-6">
+            <div className="flex items-center justify-end gap-1.5">
                 <button
-                    onClick={() => handleInvoiceClick(order.id)}
-                    className="text-indigo-600 hover:text-indigo-900 font-medium"
+                    onClick={() => setSelectedOrder(order)}
+                    title="Ver detalle"
+                    className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
                 >
-                    Timbrar Factura
+                    <DocumentTextIcon className="h-4 w-4" />
                 </button>
-            ) : (
-                <div className="flex flex-col flex-wrap justify-end gap-2 items-end">
+                {order.invoiced && order.invoiceData ? (
+                    <div className="flex items-center gap-1">
+                        <button onClick={() => handleDownload(order.invoiceData!.id, 'pdf', order.invoiceData!.uuid)} className="text-[10px] font-bold text-indigo-600 border border-indigo-200 rounded-lg px-2 py-1 bg-indigo-50 hover:bg-indigo-100 transition-colors">PDF</button>
+                        <button onClick={() => handleDownload(order.invoiceData!.id, 'xml', order.invoiceData!.uuid)} className="text-[10px] font-bold text-blue-600 border border-blue-200 rounded-lg px-2 py-1 bg-blue-50 hover:bg-blue-100 transition-colors">XML</button>
+                    </div>
+                ) : canChangeStatus ? (
+                    <button
+                        onClick={() => handleInvoiceClick(order.id)}
+                        className="text-xs font-semibold text-indigo-600 border border-indigo-200 rounded-lg px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 transition-colors"
+                    >
+                        Timbrar
+                    </button>
+                ) : (
                     <button
                         onClick={() => handleReorder(order)}
-                        className="text-slate-600 hover:text-slate-900 font-medium text-xs border border-slate-300 rounded px-2 py-1 bg-white hover:bg-slate-50 transition-colors"
+                        className="text-xs font-semibold text-slate-600 border border-slate-200 rounded-lg px-2.5 py-1 bg-white hover:bg-slate-50 transition-colors"
                     >
                         Reordenar
                     </button>
-                    <button
-                        onClick={() => showToast('Se ha notificado a tu proveedor para enviar la factura correspondiente.', 'success')}
-                        className="text-slate-500 hover:text-slate-800 font-medium text-xs border border-slate-300 rounded px-2 py-1 bg-white hover:bg-slate-50 transition-colors"
-                    >
-                        Solicitar Factura
+                )}
+                {order.status === 'PENDING' && (
+                    <button onClick={() => handleCheckout(order.id)} className="text-xs font-bold text-white bg-slate-900 hover:bg-slate-700 rounded-lg px-2.5 py-1 transition-colors">
+                        Pagar
                     </button>
-                    {order.status === 'PENDING' && (
-                        <button onClick={() => handleCheckout(order.id)} className="bg-slate-900 text-white rounded px-3 py-1.5 text-xs font-bold hover:bg-slate-800 transition-colors shadow-sm w-full">
-                            Pagar en Línea
-                        </button>
-                    )}
-                </div>
-            )}
+                )}
+            </div>
         </td>
     </tr>
 ));
@@ -404,28 +384,16 @@ export default function Orders() {
                                                 Pedido #
                                             </th>
                                             <th scope="col" className="px-3 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
-                                                Cliente
-                                            </th>
-                                            <th scope="col" className="px-3 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
-                                                Fecha
+                                                Cliente / Fecha
                                             </th>
                                             <th scope="col" className="px-3 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
                                                 Estado
                                             </th>
                                             <th scope="col" className="px-3 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
-                                                Subtotal
-                                            </th>
-                                            <th scope="col" className="px-3 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
-                                                IVA (16%)
-                                            </th>
-                                            <th scope="col" className="px-3 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
                                                 Total
                                             </th>
-                                            <th scope="col" className="px-3 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
-                                                Descuento
-                                            </th>
-                                            <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
-                                                <span className="sr-only">Acciones</span>
+                                            <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6 text-right text-xs font-bold uppercase tracking-wider text-slate-500">
+                                                Acciones
                                             </th>
                                         </tr>
                                     </thead>
@@ -442,7 +410,6 @@ export default function Orders() {
                                                 handleDownload={handleDownload}
                                                 handleCheckout={handleCheckout}
                                                 handleReorder={handleReorder}
-                                                showToast={showToast}
                                             />
                                         ))}
                                     </tbody>
